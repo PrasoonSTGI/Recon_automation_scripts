@@ -28,7 +28,7 @@ sleep_after_command() {
 
 # Prompt for user confirmation (y/N) with color
 prompt_user() {
-    # ANSI escape code for yellow text color
+    # ANSI escape code for cyan text color
     echo -e "\e[36m$1 (y/N): \e[0m"  
     read confirm
     if [[ ! "$confirm" =~ ^[Yy]$ ]]; then
