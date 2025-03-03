@@ -186,7 +186,13 @@ EOF
 else
     log_message "database_sql_new.sh already exists. Skipping creation."
 fi
-sleep_after_command
+
+
+prompt_user "Do you want to continue and execute the database_sql_new.sh file?"
+# Now execute the database_sql_new.sh file
+log_message "Executing database_sql_new.sh..."
+/home/$USER/database_sql_new.sh
+check_command_status "database_sql_new.sh execution"
 
 # Step 10: Execute SQL commands (run after tables are created)
 log_message "Running SQL commands on DB..."
@@ -206,6 +212,50 @@ check_command_status "Running SQL commands on DB"
 
 sleep_after_command
 
+# Step 11: Setting up the Recon client
+log_message "Setting up Recon client..."
+cd /home/$USER
+mkdir -p etl/output etl/archive pentaho/data-integration/lib pentaho/repository
+log_message "Created Recon client directory structure."
+
+# Step 15: Copy Dockerfile for Recon client
+log_message "Copying Dockerfile for Recon client..."
+cp /home/$USER/recon-stgwe-documentation/Dockerfile /home/$USER
+check_command_status "Copying Dockerfile"
+sleep_after_command
+
+# Step 16: Build Docker image
+log_message "Building Docker image..."
+echo $github_token | docker login ghcr.io -u $github_username --password-stdin
+check_command_status "Docker Login"
+
+log_message "Updating Dockerfile content..."
+
+# Take input for the new image version
+read -p "Enter the latest filemover image version (e.g., 3810569831.69): " IMAGE_VERSION
+
+# Update Dockerfile with the provided version
+sed -i "s|FROM ghcr.io/thesummitgrp/stgwe-framework-pdi-filemover:[^ ]*|FROM ghcr.io/thesummitgrp/stgwe-framework-pdi-filemover:$IMAGE_VERSION|" Dockerfile
+
+check_command_status "Dockerfile update with the new image version."
+
+log_message "Displaying updated Dockerfile content:"
+cat Dockerfile
+
+prompt_user "Do you want to continue and build the filemover image?"
+
+docker build -t filemover .
+
+check_command_status "Docker image built"
+
+sleep_after_command
+
+# Step 19: Verify the built Docker image
+log_message "Verifying built Docker image..."
+docker images | grep "filemover"
+check_command_status "Docker image verification"
+
+
 # Step 11: Create db_backups directory if it doesn't exist
 log_message "Checking if db_backups directory exists..."
 if [ ! -d /home/$USER/db_backups ]; then
@@ -215,6 +265,7 @@ else
     log_message "db_backups directory already exists."
 fi
 sleep_after_command
+
 
 # Step 12: Take DB backup
 log_message "Taking DB backup..."
@@ -247,6 +298,11 @@ else
     log_message "DB restore completed successfully."
 fi
 sleep_after_command
+
+prompt_user "Do you want to Run HELLO_WORLD job?"
+log_message "Running the job using filemover image..."
+docker run --rm --network host -v /home/$USER/etl:/home/$USER/etl --env-file /home/$USER/.env-pdi filemover:latest HELLO_WORLD
+check_command_status "Job execution"
 
 # Final completion message
 log_message "Script execution completed successfully."
