@@ -67,7 +67,7 @@ else
     sudo yum install -y docker-ce docker-ce-cli docker-buildx-plugin docker-compose-plugin docker-ce-rootless-extras containerd
     check_command_status "Docker installation"
 fi
-
+log_message "###################################################################################################################################################"
 # Ask user if they want to proceed with Docker service
 prompt_user "Do you want to proceed with starting and enabling the Docker service?"
 
@@ -120,10 +120,12 @@ else
     sudo usermod -aG "$group_name" "$user_name"
     check_command_status "Adding user '$user_name' to group '$group_name'"
 fi
+
+log_message "###################################################################################################################################################"
 sleep_after_command
 
 # Step 7: Clone the GitHub repository containing the shell script or use existing repo
-log_message "Checking if the repository already exists..."
+log_message "Checking if the Recon Automation scripts repository already exists..."
 
 repo_url="https://github.com/PrasoonSTGI/Recon_automation_scripts.git"
 original_user_home=$(eval echo ~$USER)
@@ -161,6 +163,7 @@ if [ -f "$script_path" ]; then
 else
     exit_on_error "Script '$script_name' not found in the repository."
 fi
+log_message "###################################################################################################################################################"
 sleep_after_command
 
 # Step 9: Switching user at the end with the new log message
