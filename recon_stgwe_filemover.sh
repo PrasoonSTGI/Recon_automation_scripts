@@ -3,7 +3,7 @@
 DB_PORT_MAPPING="15432:5432"
 DB_PORT_1=15432 
 
-# New variables initialized beforehand
+# Variables initialized 
 db_username=""
 db_name=""
 db_password=""
@@ -91,6 +91,7 @@ recheck_prerequisites
 # Now take DB and GitHub credentials
 prerequisite_credential
 
+sleep_after_command
 # Step 1: Test Docker installation by running hello-world image
 log_message 'Testing Docker installation with hello-world image...'
 docker run hello-world
