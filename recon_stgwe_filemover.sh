@@ -289,7 +289,7 @@ sleep_after_command
 log_message "Restoring backup to PostgreSQL container..."
 docker rm --force filemover-db
 sleep 5
-docker run --name filemover-db -e POSTGRES_DB=$db_name -e POSTGRES_USER=$db_username -e POSTGRES_PASSWORD=$PGPASSWORD -p $PORT_MAPPING -d postgres
+docker run --name filemover-db -e POSTGRES_DB=$db_name -e POSTGRES_USER=$db_username -e POSTGRES_PASSWORD=$db_password -p $DB_PORT_MAPPING -d postgres
 sleep 10
 docker run -i --rm --network host -v /home/$USER:/home/$USER --env-file /home/$USER/.env-pdi postgres pg_restore -d $db_name -h localhost -p $DB_PORT_1 -U $db_username -w < $(ls -td /home/$USER/db_backups/* | head -1)
 if [ $? -ne 0 ]; then
