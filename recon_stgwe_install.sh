@@ -21,6 +21,22 @@ check_command_status() {
     fi
 }
 
+# Sleep function for waiting
+sleep_after_command() {
+    sleep 4  # sleep for 4 seconds
+}
+
+# Prompt for user confirmation (y/N) with color
+prompt_user() {
+    # ANSI escape code for yellow text color
+    echo -e "\e[36m$1 (y/N): \e[0m"  
+    read confirm
+    if [[ ! "$confirm" =~ ^[Yy]$ ]]; then
+        log_message "User chose not to proceed. Exiting script."
+        exit 1
+    fi
+}
+
 # Check if yum is available
 log_message "Checking if yum is installed..."
 if ! command -v yum &> /dev/null; then
@@ -32,20 +48,6 @@ else
     log_message "yum is already installed."
 fi
 
-# Sleep function for waiting
-sleep_after_command() {
-    sleep 4  # sleep for 4 seconds
-}
-
-# Prompt for user confirmation (y/N)
-prompt_user() {
-    read -p "$1 (y/N): " confirm
-    if [[ ! "$confirm" =~ ^[Yy]$ ]]; then
-        log_message "User chose not to proceed. Exiting script."
-        exit 1
-    fi
-}
-
 # Step 1: Check if Docker is installed
 log_message "Checking if Docker is installed..."
 if command -v docker &> /dev/null; then
@@ -54,11 +56,14 @@ else
     log_message "Installing Docker..."
     
     # Add Docker repository
+    sleep_after_command
     sudo yum config-manager --add-repo https://download.docker.com/linux/rhel/docker-ce.repo
     check_command_status "Adding Docker repository"
     
     # Step 2: Install Docker
     log_message "Installing Docker..."
+    log_message "###################################################################################################################################################"
+    sleep_after_command
     sudo yum install -y docker-ce docker-ce-cli docker-buildx-plugin docker-compose-plugin docker-ce-rootless-extras containerd
     check_command_status "Docker installation"
 fi
@@ -117,10 +122,48 @@ else
 fi
 sleep_after_command
 
+# Step 7: Clone the GitHub repository containing the shell script or use existing repo
+log_message "Checking if the repository already exists..."
 
-# Step 8: Switch to the newly created user
-log_message "Docker installation and user addition are completed successfully!!!!  Now the user profile will switch from $(whoami) user to '$user_name'..."
+repo_url="https://github.com/PrasoonSTGI/Recon_automation_scripts.git"
+original_user_home=$(eval echo ~$USER)
+clone_dir="$original_user_home/Recon_automation_scripts"
+
+# Check if the repository already exists
+if [ -d "$clone_dir" ]; then
+    log_message "Repository already exists. Skipping clone."
+else
+    log_message "Cloning the repository containing 'recon_stgwe_filemover.sh'..."
+    git clone "$repo_url" "$clone_dir"
+    check_command_status "Cloning the GitHub repository"
+fi
+
+# Step 8: Move the script to the current user's home directory, make it executable, and copy to the new user
+script_name="recon_stgwe_filemover.sh"
+script_path="$clone_dir/$script_name"
+
+# Check if the script exists in the cloned repository
+if [ -f "$script_path" ]; then
+    log_message "Moving '$script_name' to the current user's home directory..."
+    
+    # Move the script to the current user's home directory
+    cp "$script_path" "$original_user_home/$script_name"
+    
+    # Make the script executable
+    chmod +x "$original_user_home/$script_name"
+    check_command_status "Making script executable"
+    
+    log_message "Copying '$script_name' to the user '$user_name' directory..."
+    # Copy the script to the new user's directory
+    sudo cp "$original_user_home/$script_name" "/home/$user_name/$script_name"
+    sudo chown "$user_name:$user_name" "/home/$user_name/$script_name"
+    check_command_status "Copying script to '$user_name'"
+else
+    exit_on_error "Script '$script_name' not found in the repository."
+fi
+sleep_after_command
+
+# Step 9: Switching user at the end with the new log message
+log_message "Docker installation, user addition, and script copying are completed successfully!"
+log_message "Now switching from user '$(whoami)' to user '$user_name'..."
 sudo su - "$user_name"
-#sleep_after_command
-
-#log_message "Docker installation and  user addition are completed successfully, and logged in with the new user."
