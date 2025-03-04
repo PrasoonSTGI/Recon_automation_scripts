@@ -135,6 +135,18 @@ clone_dir="$original_user_home/Recon_automation_scripts"
 if [ -d "$clone_dir" ]; then
     log_message "Repository already exists. Skipping clone."
 else
+    log_message "Please enter your GitHub credentials to clone the repository."
+
+    # Prompt for GitHub username and Personal Access Token (PAT)
+    echo -e "\e[36mGitHub Username: \e[0m"
+    read github_username
+
+    echo -e "\e[36mGitHub Personal Access Token: \e[0m"
+    read -s github_token  # -s hides the input for the token (for security)
+
+    # Create the GitHub URL with the username and token
+    repo_url="https://$github_username:$github_token@github.com/PrasoonSTGI/Recon_automation_scripts.git"
+
     log_message "Cloning the repository containing 'recon_stgwe_filemover.sh'..."
     git clone "$repo_url" "$clone_dir"
     check_command_status "Cloning the GitHub repository"
