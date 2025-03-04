@@ -128,7 +128,10 @@ sleep_after_command
 # Step 5: Clone the repository
 log_message "Cloning repository..."
 if [ ! -d "recon-stgwe-documentation" ]; then
-    git clone https://github.com/thesummitgrp/recon-stgwe-documentation.git
+    log_message "Cloning repository using GitHub credentials..."
+    
+    # Use GitHub username and token for cloning
+    git clone https://$github_username:$github_token@github.com/thesummitgrp/recon-stgwe-documentation.git
     check_command_status "Repository cloned"
 else
     log_message "Repository 'recon-stgwe-documentation' already exists. Skipping cloning."
