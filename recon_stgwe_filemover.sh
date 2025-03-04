@@ -262,14 +262,14 @@ prompt_user "Do you want to continue and build the filemover image?"
 
 docker build -t filemover .
 
-check_command_status "Docker image built"
+check_command_status "Base Filemover image build"
 log_message "###################################################################################################################################################"
 sleep_after_command
 
 # Step 19: Verify the built Docker image
-log_message "Verifying built Docker image..."
+log_message "Verifying built Base Filemover image..."
 docker images | grep "filemover"
-check_command_status "Docker image verification"
+check_command_status "Base Filemover image verification"
 
 log_message "###################################################################################################################################################"
 # Step 11: Create db_backups directory if it doesn't exist
