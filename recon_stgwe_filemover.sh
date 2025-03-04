@@ -179,7 +179,7 @@ sleep_after_command
 # Step 9: Create or update database_sql_new.sh file and execute it
 log_message "Checking if database_sql_new.sh exists..."
 if [ ! -f /home/$USER/database_sql_new.sh ]; then
-    log_message "database_sql_new.sh not found. Creating it..."
+    log_message "database_sql_new.sh not found. Creating database_sql_new.sh file. It will be executed to create the database objects"
     cat << 'EOF' > /home/$USER/database_sql_new.sh
 #!/bin/bash
 for FILE in $(ls -a /home/stgwe/*/*/*/*.sql); do
