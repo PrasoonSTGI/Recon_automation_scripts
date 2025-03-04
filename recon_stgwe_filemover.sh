@@ -13,7 +13,7 @@ github_token=""
 # Log function for printing messages with timestamp
 log_message() {
     echo "[$(date '+%Y-%m-%d %H:%M:%S')] $1"
-    echo "$1" >> track.txt  # Log to track file
+    echo "$1" >> InstallationStage.txt  # Log to track file
 }
 
 # Function to sleep for a few seconds (to allow time for processes to settle)
@@ -302,7 +302,7 @@ fi
 sleep_after_command
 
 # Step 14: Remove and restart PostgreSQL container and restore backup
-log_message "Restoring backup to PostgreSQL container..."
+log_message "Restoring backup to filemover-db container..."
 docker rm --force filemover-db
 sleep 5
 docker run --name filemover-db -e POSTGRES_DB=$db_name -e POSTGRES_USER=$db_username -e POSTGRES_PASSWORD=$db_password -p $DB_PORT_MAPPING -d postgres
@@ -316,8 +316,8 @@ fi
 log_message "###################################################################################################################################################"
 sleep_after_command
 
-prompt_user "Do you want to Run HELLO_WORLD job?"
-log_message "Running the job using filemover image..."
+prompt_user "Do you want to run filemover HELLO_WORLD job to test the filemover installation?"
+log_message "Running the job using base filemover image..."
 docker run --rm --network host -v /home/$USER/etl:/home/$USER/etl --env-file /home/$USER/.env-pdi filemover:latest HELLO_WORLD
 check_command_status "Job execution"
 
