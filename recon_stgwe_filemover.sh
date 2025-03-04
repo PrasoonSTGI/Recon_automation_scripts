@@ -234,13 +234,13 @@ mkdir -p etl/output etl/archive pentaho/data-integration/lib pentaho/repository
 log_message "Created Recon client directory structure."
 
 # Step 15: Copy Dockerfile for Recon client
-log_message "Copying Dockerfile for Recon client..."
+log_message "Dockerfile creation....., which will be used to build the filemover application image"
 cp /home/$USER/recon-stgwe-documentation/Dockerfile /home/$USER
-check_command_status "Copying Dockerfile"
+#check_command_status "Copying Dockerfile"
 sleep_after_command
 
 # Step 16: Build Docker image
-log_message "Building Docker image..."
+log_message "Building Filemover Docker image..."
 echo $github_token | docker login ghcr.io -u $github_username --password-stdin
 check_command_status "Docker Login"
 
