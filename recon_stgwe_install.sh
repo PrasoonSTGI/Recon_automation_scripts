@@ -180,5 +180,9 @@ sleep_after_command
 
 # Step 9: Switching user at the end with the new log message
 log_message "Docker installation, user addition, and script copying are completed successfully!"
+log_message "###################################################################################################################################################"
 log_message "Now switching from user '$(whoami)' to user '$user_name'..."
+log_message "Execute the recon_stgwe_filemover.sh file as '$user_name' user"
+echo -e "\e[36mUse the command ./recon_stgwe_filemover.sh to execute the file \e[0m"
+log_message "###################################################################################################################################################"
 sudo su - "$user_name"
