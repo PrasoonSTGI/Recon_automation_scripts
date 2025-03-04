@@ -255,7 +255,7 @@ sed -i "s|FROM ghcr.io/thesummitgrp/stgwe-framework-pdi-filemover:[^ ]*|FROM ghc
 
 check_command_status "Dockerfile update with the new image version."
 log_message "###################################################################################################################################################"
-log_message "Displaying updated Dockerfile content:"
+echo -e "\e[33mDisplaying updated Dockerfile content: \e[0m"
 cat Dockerfile
 log_message "###################################################################################################################################################"
 prompt_user "Do you want to continue and build the filemover image?"
