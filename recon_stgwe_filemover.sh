@@ -140,17 +140,17 @@ sleep_after_command
 
 # Step 6: Navigate to the home directory and copy env-pdi file
 cd ~ || exit_on_error "Failed to navigate to home directory."
-log_message "Copying env-pdi file to the home directory..."
+log_message "Creating /home/stgwe/.env-pdi file. This file will be used for database connection......"
 if [ ! -f /home/$USER/recon-stgwe-documentation/db-init/env-pdi ]; then
     exit_on_error "env-pdi file not found. Exiting script."
 else
     cp /home/$USER/recon-stgwe-documentation/db-init/env-pdi .env-pdi
-    check_command_status "Copying env-pdi file"
+    #check_command_status "Copying env-pdi file"
 fi
 sleep_after_command
 
 # Step 7: Update values inside .env-pdi file
-log_message "Updating values inside .env-pdi file..."
+#log_message "Updating values inside .env-pdi file..."
 P_STGWE_UID=$(id -u)  # Get user ID
 P_STGWE_GID=$(id -g)  # Get group ID
 PGPASSWORD=$db_password
@@ -166,10 +166,11 @@ sed -i "s/^DB_PORT_1=[^ ]*/DB_PORT_1=$DB_PORT_1/" .env-pdi
 sed -i "s/^DB_PASSWORD_1=[^ ]*/DB_PASSWORD_1=$DB_PASSWORD_1/" .env-pdi
 sed -i "s/^DB_USERNAME_1=[^ ]*/DB_USERNAME_1=$DB_USERNAME_1/" .env-pdi
 sed -i "s/^DB_NAME_1=[^ ]*/DB_NAME_1=$DB_NAME_1/" .env-pdi
-check_command_status "Updating .env-pdi file"
+#check_command_status "Updating .env-pdi file"
 log_message "###################################################################################################################################################"
 # Step 8: Test the DB connection
-log_message "Testing DB connection using .env-pdi file ...(Enter \q to exit the db connection prompt)"
+log_message "Testing DB connection using .env-pdi file ..."
+echo -e "\e[31mEnter \q to exit the db connection prompt \e[0m"
 docker run -it --rm --network host -v /home/$USER:/home/$USER --env-file /home/$USER/.env-pdi postgres psql --port $DB_PORT_1 --host localhost --username $db_username --dbname $db_name
 check_command_status "DB connection test"
 log_message "###################################################################################################################################################"
