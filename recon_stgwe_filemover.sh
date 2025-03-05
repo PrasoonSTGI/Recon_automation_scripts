@@ -1,8 +1,5 @@
 #!/bin/bash
 
-DB_PORT_MAPPING="15432:5432"
-DB_PORT_1=15432 
-
 # Variables initialized 
 db_username=""
 db_name=""
@@ -60,6 +57,7 @@ validate_github_credentials() {
     fi
 }
 
+# Function to authenticate GitHub credentials
 authenticate_github() {
     log_message "Authenticating GitHub credentials..."
     local attempts=3  # Maximum attempts
@@ -76,35 +74,13 @@ authenticate_github() {
                 exit 1  # Exit after 3 failed attempts
             fi
             echo -e "\e[36mPlease re-enter GitHub credentials.\e[0m"
-            # Prompt user to re-enter GitHub credentials if authentication fails
-            prerequisite_credential  # This will prompt the user to input GitHub username and token again
+            prerequisite_github_credential  # This will prompt the user to input GitHub username and token again
         fi
     done
 }
 
-# Function to check prerequisites for running the script
-recheck_prerequisites() {
-    # Check if the user has repo access and GitHub credentials ready
-    prompt_user "Do you have access to the git repository (recon-stgwe-documentation)?"
-    
-    prompt_user "Do you have your GitHub credentials (username & GitHub PAT) ready?"
-}
-
-# Function to prompt user for database and GitHub credentials
-prerequisite_credential() {
-    # Always ask user for credentials
-    echo -e "\e[33mDatabase Credentials \e[0m"
-    echo -e "\e[34m################################################################################################################################################### \e[0m"
-    echo -e "\e[36mEnter DB username: \e[0m"
-    read db_username
-
-    echo -e "\e[36mEnter DB name: \e[0m"
-    read db_name
-
-    echo -e "\e[36mEnter DB password: \e[0m"
-    read db_password
-    echo  
-
+# Function to prompt user for GitHub credentials
+prerequisite_github_credential() {
     echo -e "\e[33mGitHub Credentials \e[0m"
     echo -e "\e[34m################################################################################################################################################### \e[0m"
     # Prompt the user for GitHub credentials
@@ -119,19 +95,26 @@ prerequisite_credential() {
     authenticate_github
 
     # Store the credentials in the input_creds.txt file for future use (overwrite every time)
-    echo "db_username=$db_username" > input_creds.txt
-    echo "db_name=$db_name" >> input_creds.txt
-    echo "db_password=$db_password" >> input_creds.txt
-    echo "github_username=$github_username" >> input_creds.txt
+    echo "github_username=$github_username" > input_creds.txt
     echo "github_token=$github_token" >> input_creds.txt
 }
 
-# Function to authenticate DB connection
+# Function to validate DB credentials
+validate_db_credentials() {
+    local username=$1
+    local password=$2
+    local dbname=$3
+    # Check DB credentials using PostgreSQL client
+    docker run --rm --network host -v /home/$USER:/home/$USER --env-file /home/$USER/.env-pdi postgres psql --port 15432 --host localhost --username "$username" --dbname "$dbname" -c "\q"
+    return $?
+}
+
+# Function to authenticate DB credentials
 authenticate_db() {
+    log_message "Validating DB credentials..."
     local attempts=3
     while [[ $attempts -gt 0 ]]; do
-        log_message "Validating DB credentials..."
-        docker run --rm --network host -v /home/$USER:/home/$USER --env-file /home/$USER/.env-pdi postgres psql --port $DB_PORT_1 --host localhost --username $db_username --dbname $db_name -c "\q"
+        validate_db_credentials "$db_username" "$db_password" "$db_name"
         if [ $? -eq 0 ]; then
             log_message "DB connection successful."
             return 0
@@ -142,13 +125,45 @@ authenticate_db() {
                 log_message "Failed to authenticate DB credentials after 3 attempts. Exiting script."
                 exit 1
             fi
-            echo -e "\e[36mPlease re-enter DB credentials. \e[0m"
-            prerequisite_credential
+            echo -e "\e[36mPlease re-enter DB credentials.\e[0m"
+            prerequisite_db_credential  # This will prompt the user to input DB credentials again
         fi
     done
 }
 
+# Function to prompt user for database credentials
+prerequisite_db_credential() {
+    echo -e "\e[33mDatabase Credentials \e[0m"
+    echo -e "\e[34m################################################################################################################################################### \e[0m"
+    # Prompt the user for database credentials
+    echo -e "\e[36mEnter DB username: \e[0m"
+    read db_username
+
+    echo -e "\e[36mEnter DB name: \e[0m"
+    read db_name
+
+    echo -e "\e[36mEnter DB password: \e[0m"
+    read db_password
+    echo  
+
+    # Authenticate DB
+    authenticate_db
+
+    # Store the credentials in the input_creds.txt file for future use (overwrite every time)
+    echo "db_username=$db_username" > input_creds.txt
+    echo "db_name=$db_name" >> input_creds.txt
+    echo "db_password=$db_password" >> input_creds.txt
+}
+
 # Recheck prerequisites at the start of the script
+recheck_prerequisites() {
+    # Check if the user has repo access and GitHub credentials ready
+    prompt_user "Do you have access to the git repository (recon-stgwe-documentation)?"
+    
+    prompt_user "Do you have your GitHub credentials (username & GitHub PAT) ready?"
+}
+
+# Function to check prerequisites for running the script
 recheck_prerequisites
 
 # Check if the PostgreSQL container is already running
@@ -162,7 +177,7 @@ if [ $? -eq 0 ]; then
 else
     # If the container is not running, prompt the user for credentials and create the container
     log_message "PostgreSQL container is not running. Proceeding with DB credential input."
-    prerequisite_credential
+    prerequisite_db_credential
 fi
 
 # Now proceed with the rest of the script...
@@ -173,7 +188,6 @@ check_command_status "Docker hello-world test"
 
 # --> Prompt if user wants to continue (y/N)
 prompt_user "Do you want to continue?"
-
 # Step 2: Pull PostgreSQL image and run the container with user inputs
 echo -e "\e[33mDeploying PostgreSQL container  \e[0m" 
 log_message 'Checking if PostgreSQL container "filemover-db" is already running...'
