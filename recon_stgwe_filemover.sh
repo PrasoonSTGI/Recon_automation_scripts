@@ -60,18 +60,27 @@ validate_github_credentials() {
     fi
 }
 
-# Updated GitHub authentication function
 authenticate_github() {
     log_message "Authenticating GitHub credentials..."
-    validate_github_credentials "$github_username" "$github_token"
-    if [ $? -eq 0 ]; then
-        log_message "GitHub authentication successful."
-    else
-        log_message "GitHub authentication failed. Exiting script."
-        exit 1
-    fi
+    local attempts=3  # Maximum attempts
+    while [[ $attempts -gt 0 ]]; do
+        validate_github_credentials "$github_username" "$github_token"
+        if [ $? -eq 0 ]; then
+            log_message "GitHub authentication successful."
+            return 0  # Successful authentication
+        else
+            log_message "GitHub authentication failed. $attempts attempt(s) remaining."
+            ((attempts--))
+            if [[ $attempts -eq 0 ]]; then
+                log_message "Failed to authenticate GitHub credentials after 3 attempts. Exiting script."
+                exit 1  # Exit after 3 failed attempts
+            fi
+            echo -e "\e[36mPlease re-enter GitHub credentials.\e[0m"
+            # Prompt user to re-enter GitHub credentials if authentication fails
+            prerequisite_credential  # This will prompt the user to input GitHub username and token again
+        fi
+    done
 }
-
 
 # Function to check prerequisites for running the script
 recheck_prerequisites() {
