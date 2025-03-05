@@ -286,7 +286,7 @@ check_command_status "Base Filemover image verification"
 
 echo -e "\e[34m################################################################################################################################################### \e[0m"
 # Step 11: Create db_backups directory if it doesn't exist
-echo -e "\e[33mDATABASE BACKUP \e[0m"
+echo -e "\e[33mDATABASE BACKUP AND RESTORE \e[0m"
 log_message "Checking if db_backups directory exists..."
 if [ ! -d /home/$USER/db_backups ]; then
     mkdir /home/$USER/db_backups
