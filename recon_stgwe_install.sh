@@ -40,7 +40,7 @@ prompt_user() {
 # Function to check prerequisites for running the script
 recheck_prerequisites() {
     # Check if the user has repo access and GitHub credentials ready
-    prompt_user "Do you have access to the repository (Recon_automation_scripts)?"
+    prompt_user "Do you have access to the git repository (Recon_automation_scripts)?"
     
     prompt_user "Do you have your GitHub credentials (username & GitHub PAT) ready?"
 }
