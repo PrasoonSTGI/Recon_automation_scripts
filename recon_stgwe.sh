@@ -137,7 +137,5 @@ prompt_user "Do you want to execute the script '$script_name' now?"
 log_message "Executing '$script_name'..."
 echo -e "\e[34m################################################################################################################################################### \e[0m"
 $original_user_home/$script_name
-check_command_status "Executing the script"
 
-log_message "Script execution completed successfully!"
 echo -e "\e[34m################################################################################################################################################### \e[0m"
