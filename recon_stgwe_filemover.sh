@@ -166,37 +166,50 @@ recheck_prerequisites() {
 # Function to check prerequisites for running the script
 recheck_prerequisites
 
-# Check if the PostgreSQL container is already running
 # Step to validate DB connection only if the container is running
-log_message 'Checking if PostgreSQL container "filemover-db" is already running...'
+
 docker ps | grep -q "filemover-db"
 if [ $? -eq 0 ]; then
-    log_message "PostgreSQL container 'filemover-db' is already running."
+
 
     # Check if .env-pdi file exists
     if [ -f /home/$USER/.env-pdi ]; then
-        log_message ".env-pdi file found. Using environment variables for DB connection."
+
         # Authenticate using the environment file
         authenticate_db
     else
-        log_message ".env-pdi file not found. Using DB credentials directly for validation."
-
-        # Validate DB connection using provided credentials
-        PGPASSWORD=$db_password
-        docker run --rm --network host -v /home/$USER:/home/$USER --env DB_PASSWORD="$db_password" -e PGPASSWORD="$PGPASSWORD" postgres psql --port 15432 --host localhost --username "$db_username" --dbname "$db_name" -c "\q"
         
-        if [ $? -ne 0 ]; then
-            log_message "Failed to validate DB connection with provided credentials. Exiting script."
-            exit 1
-        else
-            log_message "DB connection validated successfully using provided credentials."
-        fi
+
+        # Initialize attempt counter
+        attempt_counter=0
+        max_attempts=3
+
+        while [ $attempt_counter -lt $max_attempts ]; do
+            # Validate DB connection using provided credentials
+            PGPASSWORD=$db_password
+            docker run --rm --network host -v /home/$USER:/home/$USER --env DB_PASSWORD="$db_password" -e PGPASSWORD="$PGPASSWORD" postgres psql --port 15432 --host localhost --username "$db_username" --dbname "$db_name" -c "\q"
+            
+            if [ $? -eq 0 ]; then
+      
+                break
+            else
+                attempt_counter=$((attempt_counter + 1))
+                if [ $attempt_counter -lt $max_attempts ]; then
+                    log_message "Failed to validate DB connection. Attempt $attempt_counter of $max_attempts. Please try again."
+                    # Prompt for credentials again if we haven't reached max attempts
+                    prerequisite_db_credential
+                else
+                    log_message "Failed to validate DB connection after $max_attempts attempts. Exiting script."
+                    exit 1
+                fi
+            fi
+        done
     fi
 else
     # Container not running, prompt for DB credentials and proceed
-    log_message "PostgreSQL container is not running. Proceeding with DB credential input."
     prerequisite_db_credential
 fi
+
 
 # Now proceed with the rest of the script...
 # Step 1: Test Docker installation by running hello-world image
