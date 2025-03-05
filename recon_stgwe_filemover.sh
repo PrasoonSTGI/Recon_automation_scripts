@@ -94,18 +94,21 @@ recheck_prerequisites
 
 # Now take DB and GitHub credentials
 prerequisite_credential
-log_message "###################################################################################################################################################"
+echo -e "\e[34m################################################################################################################################################### \e[0m"
+echo -e "\e[33mGETTING STARTED WITH THE SCRIPT \e[0m" 
+echo -e "\e[34m################################################################################################################################################### \e[0m"
 sleep_after_command
 # Step 1: Test Docker installation by running hello-world image
-log_message 'Testing Docker installation with hello-world image...'
+echo -e "\e[33mValidating Docker installation with hello-world image... \e[0m" 
 docker run hello-world
 check_command_status "Docker hello-world test"
 
-sleep_after_command
+echo -e "\e[34m################################################################################################################################################### \e[0m"
 
 # --> Prompt if user wants to continue (y/N)
 prompt_user "Do you want to continue?"
 
+echo -e "\e[33mDeploying PostgreSQL container  \e[0m" 
 # Step 2: Pull PostgreSQL image and run the container with user inputs
 log_message 'Checking if PostgreSQL container "filemover-db" is already running...'
 
@@ -119,14 +122,14 @@ else
     docker run --name filemover-db -e POSTGRES_DB="$db_name" -e POSTGRES_USER="$db_username" -e POSTGRES_PASSWORD="$db_password" -p $DB_PORT_MAPPING -d postgres
     check_command_status 'Deploying PostgreSQL container'
 fi
-log_message "###################################################################################################################################################"
+echo -e "\e[34m################################################################################################################################################### \e[0m"
 sleep_after_command
 
 # Step 3: Verify Docker images and containers
-log_message 'Listing Docker images and running containers...'
+echo -e "\e[33mListing Docker images and running containers...  \e[0m" 
 docker images
 docker ps
-log_message "###################################################################################################################################################"
+echo -e "\e[34m################################################################################################################################################### \e[0m"
 sleep_after_command
 
 # Step 5: Clone the repository
@@ -140,6 +143,7 @@ if [ ! -d "recon-stgwe-documentation" ]; then
 else
     log_message "Repository 'recon-stgwe-documentation' already exists. Skipping cloning."
 fi
+echo -e "\e[34m################################################################################################################################################### \e[0m"
 sleep_after_command
 
 # Step 6: Navigate to the home directory and copy env-pdi file
@@ -171,13 +175,14 @@ sed -i "s/^DB_PASSWORD_1=[^ ]*/DB_PASSWORD_1=$DB_PASSWORD_1/" .env-pdi
 sed -i "s/^DB_USERNAME_1=[^ ]*/DB_USERNAME_1=$DB_USERNAME_1/" .env-pdi
 sed -i "s/^DB_NAME_1=[^ ]*/DB_NAME_1=$DB_NAME_1/" .env-pdi
 #check_command_status "Updating .env-pdi file"
-log_message "###################################################################################################################################################"
+echo -e "\e[34m################################################################################################################################################### \e[0m"
 # Step 8: Test the DB connection
+echo -e "\e[33mDatabase connection establishment  \e[0m" 
 log_message "Testing DB connection using .env-pdi file ..."
 echo -e "\e[31mEnter \q to exit the db connection prompt \e[0m"
 docker run -it --rm --network host -v /home/$USER:/home/$USER --env-file /home/$USER/.env-pdi postgres psql --port $DB_PORT_1 --host localhost --username $db_username --dbname $db_name
 check_command_status "DB connection test"
-log_message "###################################################################################################################################################"
+echo -e "\e[34m################################################################################################################################################### \e[0m"
 sleep_after_command
 
 # Step 9: Create or update database_sql_new.sh file and execute it
@@ -197,13 +202,13 @@ else
     log_message "database_sql_new.sh already exists. Skipping creation."
 fi
 
-log_message "###################################################################################################################################################"
+echo -e "\e[34m################################################################################################################################################### \e[0m"
 prompt_user "Do you want to continue and execute the database_sql_new.sh file?"
 # Now execute the database_sql_new.sh file
 log_message "Executing database_sql_new.sh..."
 /home/$USER/database_sql_new.sh
 check_command_status "database_sql_new.sh execution"
-log_message "###################################################################################################################################################"
+echo -e "\e[34m################################################################################################################################################### \e[0m"
 sleep_after_command
 
 # Step 10: Execute SQL commands (run after tables are created)
@@ -220,30 +225,34 @@ log_message "Running Update and Alter SQL commands to bring up the DB is shape .
   docker run -it --rm --network host -v /home/$USER:/home/$USER --env-file /home/$USER/.env-pdi postgres psql --port $DB_PORT_1 --host localhost --username $db_username --dbname $db_name -c "ALTER TABLE fm_action ADD COLUMN IF NOT EXISTS precondition_override text;"
   docker run -it --rm --network host -v /home/$USER:/home/$USER --env-file /home/$USER/.env-pdi postgres psql --port $DB_PORT_1 --host localhost --username $db_username --dbname $db_name -c "ALTER TABLE fm_job_action_event ADD COLUMN IF NOT EXISTS resolved_action_parms text;"
   docker run -it --rm --network host -v /home/$USER:/home/$USER --env-file /home/$USER/.env-pdi postgres psql --port $DB_PORT_1 --host localhost --username $db_username --dbname $db_name -c "ALTER TABLE fm_job_action_event ADD COLUMN IF NOT EXISTS end_tms timestamp without time zone;"
-} >> /home/$USER/logs.txt 2>&1
+} >> /home/$USER/sql_execution_logs.txt 2>&1
 check_command_status "Running SQL commands on DB"
 
-log_message "###################################################################################################################################################"
+echo -e "\e[34m################################################################################################################################################### \e[0m"
 sleep_after_command
 
 # Now prompt the user to check the logs
-log_message "Object creation logs are captured in {logs.txt}. Please check the logs and fix any errors if any."
-prompt_user "Do you want to proceed after checking and fixing any issues in the logs?"
+log_message "Object creation logs are captured in (sql_execution_logs.txt). Please check the logs and fix any errors if any."
+prompt_user "Do you want to proceed after checking and fixing any issues?"
 
 
 # Step 11: Setting up the Recon client
-log_message "Setting up Recon client..."
+echo -e "\e[34m################################################################################################################################################### \e[0m"
+echo -e "\e[33mSetting up Recon client...  \e[0m" 
 cd /home/$USER
 mkdir -p etl/output etl/archive pentaho/data-integration/lib pentaho/repository
 log_message "Created Recon client directory structure."
-
+echo -e "\e[34m################################################################################################################################################### \e[0m"
 # Step 15: Copy Dockerfile for Recon client
-log_message "Dockerfile creation....., which will be used to build the filemover application image"
+sleep_after_command
+echo -e "\e[33mDockerfile creation....., which will be used to build the filemover application image  \e[0m" 
 cp /home/$USER/recon-stgwe-documentation/Dockerfile /home/$USER
 #check_command_status "Copying Dockerfile"
+echo -e "\e[34m################################################################################################################################################### \e[0m"
 sleep_after_command
 
 # Step 16: Build Docker image
+echo -e "\e[33mSETTING UP FILEMOVER  \e[0m" 
 log_message "Building Filemover Docker image..."
 echo $github_token | docker login ghcr.io -u $github_username --password-stdin
 check_command_status "Docker Login"
@@ -251,23 +260,23 @@ check_command_status "Docker Login"
 log_message "Updating Dockerfile content..."
 
 # Take input for the new image version
-echo -e "\e[33mEnter the latest filemover image version (e.g., 3810569831.69): \e[0m"
+echo -e "\e[36mEnter the latest filemover image version (e.g., 3810569831.69): \e[0m"
 read IMAGE_VERSION
 
 # Update Dockerfile with the provided version
 sed -i "s|FROM ghcr.io/thesummitgrp/stgwe-framework-pdi-filemover:[^ ]*|FROM ghcr.io/thesummitgrp/stgwe-framework-pdi-filemover:$IMAGE_VERSION|" Dockerfile
 
 check_command_status "Dockerfile update with the new image version."
-log_message "###################################################################################################################################################"
+echo -e "\e[34m################################################################################################################################################### \e[0m"
 echo -e "\e[33mDisplaying updated Dockerfile content: \e[0m"
 cat Dockerfile
-log_message "###################################################################################################################################################"
+echo -e "\e[34m################################################################################################################################################### \e[0m"
 prompt_user "Do you want to continue and build the filemover image?"
 
 docker build -t filemover .
 
 check_command_status "Base Filemover image build"
-log_message "###################################################################################################################################################"
+echo -e "\e[34m################################################################################################################################################### \e[0m"
 sleep_after_command
 
 # Step 19: Verify the built Docker image
@@ -275,8 +284,9 @@ log_message "Verifying built Base Filemover image..."
 docker images | grep "filemover"
 check_command_status "Base Filemover image verification"
 
-log_message "###################################################################################################################################################"
+echo -e "\e[34m################################################################################################################################################### \e[0m"
 # Step 11: Create db_backups directory if it doesn't exist
+echo -e "\e[33mDATABASE BACKUP \e[0m"
 log_message "Checking if db_backups directory exists..."
 if [ ! -d /home/$USER/db_backups ]; then
     mkdir /home/$USER/db_backups
@@ -317,7 +327,7 @@ if [ $? -ne 0 ]; then
 else
     log_message "DB restore completed successfully."
 fi
-log_message "###################################################################################################################################################"
+echo -e "\e[34m################################################################################################################################################### \e[0m"
 sleep_after_command
 
 prompt_user "Do you want to run filemover HELLO_WORLD job to test the filemover installation?"
