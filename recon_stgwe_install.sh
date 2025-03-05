@@ -45,6 +45,7 @@ recheck_prerequisites() {
     prompt_user "Do you have your GitHub credentials (username & GitHub PAT) ready?"
 }
 
+recheck_prerequisites
 # Check if yum is available
 log_message "Checking if yum is installed..."
 if ! command -v yum &> /dev/null; then
