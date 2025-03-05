@@ -47,6 +47,40 @@ prompt_user() {
     fi
 }
 
+# Function to authenticate GitHub credentials
+authenticate_github() {
+    log_message "Authenticating GitHub credentials..."
+    curl -s -u "$github_username:$github_token" https://api.github.com/user > /dev/null
+    if [ $? -eq 0 ]; then
+        log_message "GitHub authentication successful."
+    else
+        log_message "GitHub authentication failed. Exiting script."
+        exit 1
+    fi
+}
+
+# Function to authenticate DB connection
+authenticate_db() {
+    local attempts=3
+    while [[ $attempts -gt 0 ]]; do
+        log_message "Validating DB credentials..."
+        docker run --rm --network host -v /home/$USER:/home/$USER --env-file /home/$USER/.env-pdi postgres psql --port $DB_PORT_1 --host localhost --username $db_username --dbname $db_name -c "\q"
+        if [ $? -eq 0 ]; then
+            log_message "DB connection successful."
+            return 0
+        else
+            log_message "DB connection failed. $attempts attempt(s) remaining."
+            ((attempts--))
+            if [[ $attempts -eq 0 ]]; then
+                log_message "Failed to authenticate DB credentials after 3 attempts. Exiting script."
+                exit 1
+            fi
+            echo -e "\e[36mPlease re-enter DB credentials. \e[0m"
+            prerequisite_credential
+        fi
+    done
+}
+
 # Function to check prerequisites for running the script
 recheck_prerequisites() {
     # Check if the user has repo access and GitHub credentials ready
@@ -80,6 +114,9 @@ prerequisite_credential() {
     read github_token
     echo  
 
+    # Authenticate GitHub
+    authenticate_github
+
     # Store the credentials in the input_creds.txt file for future use (overwrite every time)
     echo "db_username=$db_username" > input_creds.txt
     echo "db_name=$db_name" >> input_creds.txt
@@ -92,24 +129,31 @@ prerequisite_credential() {
 # Recheck prerequisites at the start of the script
 recheck_prerequisites
 
-# Now take DB and GitHub credentials
-prerequisite_credential
-echo -e "\e[34m################################################################################################################################################### \e[0m"
-echo -e "\e[33mGETTING STARTED WITH THE SCRIPT \e[0m" 
-echo -e "\e[34m################################################################################################################################################### \e[0m"
-sleep_after_command
+# Check if the PostgreSQL container is already running
+log_message 'Checking if PostgreSQL container "filemover-db" is already running...'
+docker ps | grep -q "filemover-db"
+if [ $? -eq 0 ]; then
+    log_message "PostgreSQL container 'filemover-db' is already running."
+
+    # If the container is already running, validate DB connection
+    authenticate_db
+else
+    # If the container is not running, prompt the user for credentials and create the container
+    log_message "PostgreSQL container is not running. Proceeding with DB credential input."
+    prerequisite_credential
+fi
+
+# Now proceed with the rest of the script...
 # Step 1: Test Docker installation by running hello-world image
 echo -e "\e[33mValidating Docker installation with hello-world image... \e[0m" 
 docker run hello-world
 check_command_status "Docker hello-world test"
 
-echo -e "\e[34m################################################################################################################################################### \e[0m"
-
 # --> Prompt if user wants to continue (y/N)
 prompt_user "Do you want to continue?"
 
-echo -e "\e[33mDeploying PostgreSQL container  \e[0m" 
 # Step 2: Pull PostgreSQL image and run the container with user inputs
+echo -e "\e[33mDeploying PostgreSQL container  \e[0m" 
 log_message 'Checking if PostgreSQL container "filemover-db" is already running...'
 
 # Check if the PostgreSQL container is already running
