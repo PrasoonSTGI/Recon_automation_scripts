@@ -47,10 +47,23 @@ prompt_user() {
     fi
 }
 
-# Function to authenticate GitHub credentials
+# Function to validate GitHub credentials
+validate_github_credentials() {
+    local username=$1
+    local token=$2
+    # Make an API call to GitHub to validate credentials
+    response=$(curl -s -o /dev/null -w "%{http_code}" -u "$username:$token" https://api.github.com/user)
+    if [ "$response" -eq 200 ]; then
+        return 0  # Credentials are valid
+    else
+        return 1  # Invalid credentials
+    fi
+}
+
+# Updated GitHub authentication function
 authenticate_github() {
     log_message "Authenticating GitHub credentials..."
-    curl -s -u "$github_username:$github_token" https://api.github.com/user > /dev/null
+    validate_github_credentials "$github_username" "$github_token"
     if [ $? -eq 0 ]; then
         log_message "GitHub authentication successful."
     else
@@ -59,27 +72,6 @@ authenticate_github() {
     fi
 }
 
-# Function to authenticate DB connection
-authenticate_db() {
-    local attempts=3
-    while [[ $attempts -gt 0 ]]; do
-        log_message "Validating DB credentials..."
-        docker run --rm --network host -v /home/$USER:/home/$USER --env-file /home/$USER/.env-pdi postgres psql --port $DB_PORT_1 --host localhost --username $db_username --dbname $db_name -c "\q"
-        if [ $? -eq 0 ]; then
-            log_message "DB connection successful."
-            return 0
-        else
-            log_message "DB connection failed. $attempts attempt(s) remaining."
-            ((attempts--))
-            if [[ $attempts -eq 0 ]]; then
-                log_message "Failed to authenticate DB credentials after 3 attempts. Exiting script."
-                exit 1
-            fi
-            echo -e "\e[36mPlease re-enter DB credentials. \e[0m"
-            prerequisite_credential
-        fi
-    done
-}
 
 # Function to check prerequisites for running the script
 recheck_prerequisites() {
@@ -125,6 +117,27 @@ prerequisite_credential() {
     echo "github_token=$github_token" >> input_creds.txt
 }
 
+# Function to authenticate DB connection
+authenticate_db() {
+    local attempts=3
+    while [[ $attempts -gt 0 ]]; do
+        log_message "Validating DB credentials..."
+        docker run --rm --network host -v /home/$USER:/home/$USER --env-file /home/$USER/.env-pdi postgres psql --port $DB_PORT_1 --host localhost --username $db_username --dbname $db_name -c "\q"
+        if [ $? -eq 0 ]; then
+            log_message "DB connection successful."
+            return 0
+        else
+            log_message "DB connection failed. $attempts attempt(s) remaining."
+            ((attempts--))
+            if [[ $attempts -eq 0 ]]; then
+                log_message "Failed to authenticate DB credentials after 3 attempts. Exiting script."
+                exit 1
+            fi
+            echo -e "\e[36mPlease re-enter DB credentials. \e[0m"
+            prerequisite_credential
+        fi
+    done
+}
 
 # Recheck prerequisites at the start of the script
 recheck_prerequisites
