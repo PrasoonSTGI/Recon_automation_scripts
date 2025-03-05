@@ -50,7 +50,7 @@ prompt_user() {
 # Function to check prerequisites for running the script
 recheck_prerequisites() {
     # Check if the user has repo access and GitHub credentials ready
-    prompt_user "Do you have access to the repository (recon-stgwe-documentation)?"
+    prompt_user "Do you have access to the git repository (recon-stgwe-documentation)?"
     
     prompt_user "Do you have your GitHub credentials (username & GitHub PAT) ready?"
 }
@@ -58,21 +58,25 @@ recheck_prerequisites() {
 # Function to prompt user for database and GitHub credentials
 prerequisite_credential() {
     # Always ask user for credentials
-    echo -e "\e[33mEnter DB username: \e[0m"
+    echo -e "\e[33mDatabase Credentials \e[0m"
+    echo -e "\e[34m################################################################################################################################################### \e[0m"
+    echo -e "\e[36mEnter DB username: \e[0m"
     read db_username
 
-    echo -e "\e[33mEnter DB name: \e[0m"
+    echo -e "\e[36mEnter DB name: \e[0m"
     read db_name
 
-    echo -e "\e[33mEnter DB password: \e[0m"
+    echo -e "\e[36mEnter DB password: \e[0m"
     read db_password
     echo  
 
+    echo -e "\e[33mGitHub Credentials \e[0m"
+    echo -e "\e[34m################################################################################################################################################### \e[0m"
     # Prompt the user for GitHub credentials
-    echo -e "\e[33mEnter GitHub username: \e[0m"
+    echo -e "\e[36mEnter GitHub username: \e[0m"
     read github_username
 
-    echo -e "\e[33mEnter GitHub Personal Access Token (PAT): \e[0m"
+    echo -e "\e[36mEnter GitHub Personal Access Token (PAT): \e[0m"
     read github_token
     echo  
 
