@@ -46,7 +46,12 @@ recheck_prerequisites() {
 }
 
 recheck_prerequisites
+echo -e "\e[34m################################################################################################################################################### \e[0m"
+echo -e "\e[33mGETTING STARTED WITH THE SCRIPT \e[0m" 
+echo -e "\e[34m################################################################################################################################################### \e[0m"
+sleep_after_command
 # Check if yum is available
+echo -e "\e[33mYUM INSTALLATION \e[0m" 
 log_message "Checking if yum is installed..."
 if ! command -v yum &> /dev/null; then
     log_message "yum package manager not found."
@@ -56,14 +61,15 @@ if ! command -v yum &> /dev/null; then
 else
     log_message "yum is already installed."
 fi
-
+echo -e "\e[34m################################################################################################################################################### \e[0m"
 # Step 1: Check if Docker is installed
+prompt_user "Do you want to proceed with Docker installation ?"
+echo -e "\e[33mDOCKER INSTALLATION \e[0m" 
 log_message "Checking if Docker is installed..."
 if command -v docker &> /dev/null; then
     log_message "Docker is already installed."
 else
-    log_message "Installing Docker..."
-    
+    log_message "Installing Docker..." 
     # Add Docker repository
     sleep_after_command
     sudo yum config-manager --add-repo https://download.docker.com/linux/rhel/docker-ce.repo
@@ -71,12 +77,12 @@ else
     
     # Step 2: Install Docker
     log_message "Installing Docker..."
-    log_message "###################################################################################################################################################"
+    echo -e "\e[34m################################################################################################################################################### \e[0m"
     sleep_after_command
     sudo yum install -y docker-ce docker-ce-cli docker-buildx-plugin docker-compose-plugin docker-ce-rootless-extras containerd
     check_command_status "Docker installation"
 fi
-log_message "###################################################################################################################################################"
+echo -e "\e[34m################################################################################################################################################### \e[0m"
 # Ask user if they want to proceed with Docker service
 prompt_user "Do you want to proceed with starting and enabling the Docker service?"
 
@@ -88,7 +94,7 @@ check_command_status "Starting Docker service"
 log_message "Enabling Docker service to start on boot..."
 sudo systemctl enable docker
 check_command_status "Enabling Docker service on boot"
-sleep_after_command
+echo -e "\e[34m################################################################################################################################################### \e[0m"
 
 # Ask user if they want to proceed with user and group creation
 prompt_user "Do you want to proceed with creating a user and group?"
@@ -130,7 +136,7 @@ else
     check_command_status "Adding user '$user_name' to group '$group_name'"
 fi
 
-log_message "###################################################################################################################################################"
+echo -e "\e[34m################################################################################################################################################### \e[0m"
 sleep_after_command
 
 # Step 7: Clone the GitHub repository containing the shell script or use existing repo
@@ -184,14 +190,14 @@ if [ -f "$script_path" ]; then
 else
     exit_on_error "Script '$script_name' not found in the repository."
 fi
-log_message "###################################################################################################################################################"
+echo -e "\e[34m################################################################################################################################################### \e[0m"
 sleep_after_command
 
 # Step 9: Switching user at the end with the new log message
 log_message "Docker installation, user addition, and script copying are completed successfully!"
-log_message "###################################################################################################################################################"
+echo -e "\e[34m################################################################################################################################################### \e[0m"
 log_message "Now switching from user '$(whoami)' to user '$user_name'..."
 log_message "Execute the recon_stgwe_filemover.sh file as '$user_name' user"
-echo -e "\e[36mUse the command ./recon_stgwe_filemover.sh to execute the file \e[0m"
-log_message "###################################################################################################################################################"
+echo -e "\e[33mNext Use the command ./recon_stgwe_filemover.sh to execute the file \e[0m"
+echo -e "\e[34m################################################################################################################################################### \e[0m"
 sudo su - "$user_name"
