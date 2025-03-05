@@ -192,7 +192,7 @@ if [ ! -f /home/$USER/database_sql_new.sh ]; then
     cat << 'EOF' > /home/$USER/database_sql_new.sh
 #!/bin/bash
 for FILE in $(ls -a /home/stgwe/*/*/*/*.sql); do
-    docker run --rm --network host -v /home/stgwe:/home/stgwe --env-file /home/stgwe/.env-pdi postgres psql --port 15432 --host localhost --username summit --dbname summit -f $FILE >> /home/$USER/logs.txt 2>&1
+    docker run --rm --network host -v /home/stgwe:/home/stgwe --env-file /home/stgwe/.env-pdi postgres psql --port 15432 --host localhost --username summit --dbname summit -f $FILE >> /home/$USER/sql_execution_logs.txt 2>&1
 done
 EOF
     check_command_status "Creating database_sql_new.sh"
