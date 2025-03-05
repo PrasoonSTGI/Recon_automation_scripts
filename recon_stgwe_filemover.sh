@@ -334,6 +334,23 @@ prompt_user "Do you want to run filemover HELLO_WORLD job to test the filemover 
 log_message "Running the job using base filemover image..."
 docker run --rm --network host -v /home/$USER/etl:/home/$USER/etl --env-file /home/$USER/.env-pdi filemover:latest HELLO_WORLD
 check_command_status "Job execution"
+echo -e "\e[34m################################################################################################################################################### \e[0m"
+# Final step: Prompt to clean up input_creds.txt
+echo -e "\e[33mScript execution completed successfully!!! \e[0m"
+echo -e "\e[34m################################################################################################################################################### \e[0m"
+prompt_user "Do you want to perform file clean-up (remove input_creds.txt)?"
+
+# If user chooses to delete input_creds.txt
+if [[ "$confirm" =~ ^[Yy]$ ]]; then
+    log_message "Removing input_creds.txt..."
+    rm -f input_creds.txt
+    check_command_status "input_creds.txt removal"
+else
+    log_message "input_creds.txt has not been removed."
+fi
+
+echo -e "\e[34m################################################################################################################################################### \e[0m"
 
 # Final completion message
-log_message "Script execution completed successfully."
+echo -e "\e[32mEND OF SCRIPT THANKYOU!!! \e[0m"
+
