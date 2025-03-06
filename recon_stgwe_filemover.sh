@@ -116,8 +116,8 @@ authenticate_db() {
             return 0
         else
             echo -e "\e[31mWrong Credentials!!!! \e[0m"
-            log_message "DB connection failed. $attempts attempt(s) remaining."
             ((attempts--))
+            log_message "DB connection failed. $attempts attempt(s) remaining."
             if [[ $attempts -eq 0 ]]; then
                 log_message "Failed to authenticate DB credentials after 3 attempts. Exiting script."
                 exit 1
@@ -425,15 +425,16 @@ echo -e "\e[34m#################################################################
 # Final step: Prompt to clean up input_creds.txt
 echo -e "\e[33mScript execution completed successfully!!! \e[0m"
 echo -e "\e[34m################################################################################################################################################### \e[0m"
-prompt_user "Do you want to perform file clean-up (remove input_creds.txt)?"
+prompt_user "Do you want to perform file clean-up (remove DB_input_creds.txt & GitHub_input_creds.txt)?"
 
 # If user chooses to delete input_creds.txt
 if [[ "$confirm" =~ ^[Yy]$ ]]; then
-    log_message "Removing input_creds.txt..."
-    rm -f input_creds.txt
-    check_command_status "input_creds.txt removal"
+    log_message "Removing DB_input_creds.txt & GitHub_input_creds.txt..."
+    rm -f DB_input_creds.txt
+    rm -f GitHub_input_creds.txt
+    check_command_status "DB_input_creds.txt & GitHub_input_creds.txt removal"
 else
-    log_message "input_creds.txt has not been removed."
+    log_message "DB_input_creds.txt & GitHub_input_creds.txt have not been removed."
 fi
 
 echo -e "\e[34m################################################################################################################################################### \e[0m"
