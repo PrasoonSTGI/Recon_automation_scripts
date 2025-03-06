@@ -147,8 +147,6 @@ prerequisite_db_credential() {
     echo  
 
     # Authenticate DB
-    docker ps | grep -q "filemover-db"
-    if [ $? -eq 0 ]; then
     authenticate_db
 
     # Store the credentials in the input_creds.txt file for future use (overwrite every time)
@@ -161,57 +159,19 @@ prerequisite_db_credential() {
 recheck_prerequisites() {
     # Check if the user has repo access and GitHub credentials ready
     prompt_user "Do you have access to the git repository (recon-stgwe-documentation)?"
-    
+
     prompt_user "Do you have your GitHub credentials (username & GitHub PAT) ready?"
 }
 
 # Function to check prerequisites for running the script
 recheck_prerequisites
 
-# Step to validate DB connection only if the container is running
-
 docker ps | grep -q "filemover-db"
 if [ $? -eq 0 ]; then
-
-
-    # Check if .env-pdi file exists
-    if [ -f /home/$USER/.env-pdi ]; then
-
-        # Authenticate using the environment file
         authenticate_db
-    else
-        
-
-        # Initialize attempt counter
-        attempt_counter=0
-        max_attempts=3
-
-        while [ $attempt_counter -lt $max_attempts ]; do
-            # Validate DB connection using provided credentials
-            PGPASSWORD=$db_password
-            docker run --rm --network host -v /home/$USER:/home/$USER --env DB_PASSWORD="$db_password" -e PGPASSWORD="$PGPASSWORD" postgres psql --port 15432 --host localhost --username "$db_username" --dbname "$db_name" -c "\q"
-            
-            if [ $? -eq 0 ]; then
-      
-                break
-            else
-                attempt_counter=$((attempt_counter + 1))
-                if [ $attempt_counter -lt $max_attempts ]; then
-                    log_message "Failed to validate DB connection. Attempt $attempt_counter of $max_attempts. Please try again."
-                    # Prompt for credentials again if we haven't reached max attempts
-                    prerequisite_db_credential
-                else
-                    log_message "Failed to validate DB connection after $max_attempts attempts. Exiting script."
-                    exit 1
-                fi
-            fi
-        done
-    fi
 else
-    # Container not running, prompt for DB credentials and proceed
     prerequisite_db_credential
 fi
-
 
 # Now proceed with the rest of the script...
 # Step 1: Test Docker installation by running hello-world image
@@ -249,7 +209,7 @@ sleep_after_command
 log_message "Cloning repository..."
 if [ ! -d "recon-stgwe-documentation" ]; then
     log_message "Cloning repository using GitHub credentials..."
-    
+
     # Use GitHub username and token for cloning
     git clone https://$github_username:$github_token@github.com/thesummitgrp/recon-stgwe-documentation.git
     check_command_status "Repository cloned"
@@ -466,4 +426,3 @@ echo -e "\e[34m#################################################################
 
 # Final completion message
 echo -e "\e[32mEND OF SCRIPT THANKYOU!!! \e[0m"
-
