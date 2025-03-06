@@ -147,7 +147,7 @@ prerequisite_db_credential() {
     echo  
 
     # Authenticate DB
-    authenticate_db
+    # authenticate_db
 
     # Store the credentials in the input_creds.txt file for future use (overwrite every time)
     echo "db_username=$db_username" > input_creds.txt
