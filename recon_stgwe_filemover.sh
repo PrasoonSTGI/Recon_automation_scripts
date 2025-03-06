@@ -69,10 +69,11 @@ prerequisite_github_credential() {
     while true; do
         # Validate the credentials by calling GitHub API
         if validate_github_credentials "$github_username" "$github_token"; then
-            log_message "GitHub credentials validated successfully."
+            echo -e "\e[32mGitHub credentials validated successfully.\e[0m"
             break  # Exit the loop if credentials are valid
         else
             ((attempts++))
+            echo -e "\e[31mWrong Credentials!!!!! \e[0m"
             log_message "Invalid GitHub credentials. Attempt $attempts of $max_attempts."
             if [ "$attempts" -ge "$max_attempts" ]; then
                 exit_on_error "Failed to authenticate GitHub credentials after $max_attempts attempts. Please try again later."
@@ -88,8 +89,8 @@ prerequisite_github_credential() {
     done
 
     # Store the credentials in the input_creds.txt file for future use (overwrite every time)
-    echo "github_username=$github_username" > input_creds.txt
-    echo "github_token=$github_token" >> input_creds.txt
+    echo "github_username=$github_username" > GitHub_input_creds.txt
+    echo "github_token=$github_token" >> GitHub_input_creds.txt
 }
 
 # Function to validate DB credentials
@@ -104,14 +105,17 @@ validate_db_credentials() {
 
 # Function to authenticate DB credentials
 authenticate_db() {
-    log_message "Validating DB credentials..."
+    prerequisite_db_credential
+    log_message "DB is already present Validating DB credentials..."
     local attempts=3
     while [[ $attempts -gt 0 ]]; do
         validate_db_credentials "$db_username" "$db_password" "$db_name"
         if [ $? -eq 0 ]; then
+            echo -e "\e[32mDB Credentials Verified \e[0m"
             log_message "DB connection successful."
             return 0
         else
+            echo -e "\e[31mWrong Credentials!!!! \e[0m"
             log_message "DB connection failed. $attempts attempt(s) remaining."
             ((attempts--))
             if [[ $attempts -eq 0 ]]; then
@@ -140,9 +144,9 @@ prerequisite_db_credential() {
     echo  
 
     # Store the credentials in the input_creds.txt file for future use (overwrite every time)
-    echo "db_username=$db_username" > input_creds.txt
-    echo "db_name=$db_name" >> input_creds.txt
-    echo "db_password=$db_password" >> input_creds.txt
+    echo "db_username=$db_username" > DB_input_creds.txt
+    echo "db_name=$db_name" >> DB_input_creds.txt
+    echo "db_password=$db_password" >> DB_input_creds.txt
 }
 
 # Function to prompt for user decision to continue
