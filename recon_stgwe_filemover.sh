@@ -180,7 +180,9 @@ else
     prerequisite_db_credential
 fi
 echo -e "\e[34m################################################################################################################################################### \e[0m"
-# Now proceed with the rest of the script...
+echo -e "\e[33mGETTING STARTED WITH THE SCRIPT \e[0m" 
+echo -e "\e[34m################################################################################################################################################### \e[0m"
+sleep_after_command
 # Step 1: Test Docker installation by running hello-world image
 echo -e "\e[33mValidating Docker installation with hello-world image... \e[0m"
 docker run hello-world
