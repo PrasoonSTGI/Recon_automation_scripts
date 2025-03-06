@@ -1,5 +1,8 @@
 #!/bin/bash
 
+DB_PORT_MAPPING="15432:5432"
+DB_PORT_1=15432 
+
 # Variables initialized 
 db_username=""
 db_name=""
@@ -172,7 +175,8 @@ if [ $? -eq 0 ]; then
 else
     prerequisite_db_credential
 fi
-
+prerequisite_github_credential
+echo -e "\e[34m################################################################################################################################################### \e[0m"
 # Now proceed with the rest of the script...
 # Step 1: Test Docker installation by running hello-world image
 echo -e "\e[33mValidating Docker installation with hello-world image... \e[0m" 
