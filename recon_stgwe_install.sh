@@ -45,7 +45,7 @@ recheck_prerequisites() {
     prompt_user "Do you have your GitHub credentials (username & GitHub PAT) ready?"
 }
 
-recheck_prerequisites
+# recheck_prerequisites
 echo -e "\e[34m################################################################################################################################################### \e[0m"
 echo -e "\e[33mGETTING STARTED WITH THE SCRIPT \e[0m" 
 echo -e "\e[34m################################################################################################################################################### \e[0m"
