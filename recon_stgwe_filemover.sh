@@ -147,6 +147,8 @@ prerequisite_db_credential() {
     echo  
 
     # Authenticate DB
+    docker ps | grep -q "filemover-db"
+    if [ $? -eq 0 ]; then
     authenticate_db
 
     # Store the credentials in the input_creds.txt file for future use (overwrite every time)
