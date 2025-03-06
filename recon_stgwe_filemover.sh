@@ -147,9 +147,12 @@ prerequisite_db_credential() {
 
 # Function to prompt for user decision to continue
 prompt_user() {
-    read -p "$1 (y/N): " user_input
-    if [[ ! "$user_input" =~ ^[Yy]$ ]]; then
-        exit_on_error "User opted to cancel the installation process."
+    # ANSI escape code for cyan text color
+    echo -e "\e[36m$1 (y/N): \e[0m"  
+    read confirm
+    if [[ ! "$confirm" =~ ^[Yy]$ ]]; then
+        log_message "User chose not to proceed. Exiting script."
+        exit 1
     fi
 }
 
@@ -176,7 +179,7 @@ else
     # If the container is not running, prompt for DB credentials
     prerequisite_db_credential
 fi
-
+echo -e "\e[34m################################################################################################################################################### \e[0m"
 # Now proceed with the rest of the script...
 # Step 1: Test Docker installation by running hello-world image
 echo -e "\e[33mValidating Docker installation with hello-world image... \e[0m"
