@@ -1,7 +1,7 @@
 #!/bin/bash
 
 DB_PORT_MAPPING="15432:5432"
-DB_PORT_1=15432 
+DB_PORT_1=15432
 
 # Variables initialized 
 db_username=""
@@ -37,16 +37,6 @@ check_command_status() {
     fi
 }
 
-# Function to prompt the user with a colored message (Cyan color)
-prompt_user() {
-    echo -e "\e[36m$1 (y/N): \e[0m"  # Cyan color prompt
-    read confirm
-    if [[ ! "$confirm" =~ ^[Yy]$ ]]; then
-        log_message "User chose not to proceed. Exiting script."
-        exit 1
-    fi
-}
-
 # Function to validate GitHub credentials
 validate_github_credentials() {
     local username=$1
@@ -60,28 +50,6 @@ validate_github_credentials() {
     fi
 }
 
-# Function to authenticate GitHub credentials
-authenticate_github() {
-    log_message "Authenticating GitHub credentials..."
-    local attempts=3  # Maximum attempts
-    while [[ $attempts -gt 0 ]]; do
-        validate_github_credentials "$github_username" "$github_token"
-        if [ $? -eq 0 ]; then
-            log_message "GitHub authentication successful."
-            return 0  # Successful authentication
-        else
-            log_message "GitHub authentication failed. $attempts attempt(s) remaining."
-            ((attempts--))
-            if [[ $attempts -eq 0 ]]; then
-                log_message "Failed to authenticate GitHub credentials after 3 attempts. Exiting script."
-                exit 1  # Exit after 3 failed attempts
-            fi
-            echo -e "\e[36mPlease re-enter GitHub credentials.\e[0m"
-            prerequisite_github_credential  # This will prompt the user to input GitHub username and token again
-        fi
-    done
-}
-
 # Function to prompt user for GitHub credentials
 prerequisite_github_credential() {
     echo -e "\e[33mGitHub Credentials \e[0m"
@@ -91,11 +59,33 @@ prerequisite_github_credential() {
     read github_username
 
     echo -e "\e[36mEnter GitHub Personal Access Token (PAT): \e[0m"
-    read github_token
+    read -s github_token
     echo  
 
-    # Authenticate GitHub
-    authenticate_github
+    # Validate GitHub credentials with limited attempts
+    attempts=0
+    max_attempts=3
+
+    while true; do
+        # Validate the credentials by calling GitHub API
+        if validate_github_credentials "$github_username" "$github_token"; then
+            log_message "GitHub credentials validated successfully."
+            break  # Exit the loop if credentials are valid
+        else
+            ((attempts++))
+            log_message "Invalid GitHub credentials. Attempt $attempts of $max_attempts."
+            if [ "$attempts" -ge "$max_attempts" ]; then
+                exit_on_error "Failed to authenticate GitHub credentials after $max_attempts attempts. Please try again later."
+            fi
+            # If credentials are invalid, prompt user again
+            echo -e "\e[36mPlease re-enter your GitHub credentials.\e[0m"
+            echo -e "\e[36mGitHub Username: \e[0m"
+            read github_username
+
+            echo -e "\e[36mGitHub Personal Access Token: \e[0m"
+            read -s github_token
+        fi
+    done
 
     # Store the credentials in the input_creds.txt file for future use (overwrite every time)
     echo "github_username=$github_username" > input_creds.txt
@@ -155,36 +145,49 @@ prerequisite_db_credential() {
     echo "db_password=$db_password" >> input_creds.txt
 }
 
+# Function to prompt for user decision to continue
+prompt_user() {
+    read -p "$1 (y/N): " user_input
+    if [[ ! "$user_input" =~ ^[Yy]$ ]]; then
+        exit_on_error "User opted to cancel the installation process."
+    fi
+}
+
 # Recheck prerequisites at the start of the script
 recheck_prerequisites() {
     # Check if the user has repo access and GitHub credentials ready
     prompt_user "Do you have access to the git repository (recon-stgwe-documentation)?"
-
     prompt_user "Do you have your GitHub credentials (username & GitHub PAT) ready?"
 }
 
-# Function to check prerequisites for running the script
+# Main Script Execution
+
+# Check prerequisites
 recheck_prerequisites
 
+# Validate GitHub credentials
+prerequisite_github_credential
+
+# Check if the user is running the DB container
 docker ps | grep -q "filemover-db"
 if [ $? -eq 0 ]; then
-    authenticate_db
+    authenticate_db  # If the DB container is running, authenticate DB credentials
 else
     # If the container is not running, prompt for DB credentials
     prerequisite_db_credential
 fi
-prerequisite_github_credential
-echo -e "\e[34m################################################################################################################################################### \e[0m"
+
 # Now proceed with the rest of the script...
 # Step 1: Test Docker installation by running hello-world image
-echo -e "\e[33mValidating Docker installation with hello-world image... \e[0m" 
+echo -e "\e[33mValidating Docker installation with hello-world image... \e[0m"
 docker run hello-world
 check_command_status "Docker hello-world test"
 
 # --> Prompt if user wants to continue (y/N)
 prompt_user "Do you want to continue?"
+
 # Step 2: Pull PostgreSQL image and run the container with user inputs
-echo -e "\e[33mDeploying PostgreSQL container  \e[0m" 
+echo -e "\e[33mDeploying PostgreSQL container  \e[0m"
 log_message 'Checking if PostgreSQL container "filemover-db" is already running...'
 
 # Check if the PostgreSQL container is already running
@@ -201,7 +204,7 @@ echo -e "\e[34m#################################################################
 sleep_after_command
 
 # Step 3: Verify Docker images and containers
-echo -e "\e[33mListing Docker images and running containers...  \e[0m" 
+echo -e "\e[33mListing Docker images and running containers...  \e[0m"
 docker images
 docker ps
 echo -e "\e[34m################################################################################################################################################### \e[0m"
