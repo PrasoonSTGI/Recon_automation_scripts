@@ -59,7 +59,7 @@ prerequisite_github_credential() {
     read github_username
 
     echo -e "\e[36mEnter GitHub Personal Access Token (PAT): \e[0m"
-    read -s github_token
+    read github_token
     echo  
 
     # Validate GitHub credentials with limited attempts
@@ -83,7 +83,7 @@ prerequisite_github_credential() {
             read github_username
 
             echo -e "\e[36mGitHub Personal Access Token: \e[0m"
-            read -s github_token
+            read github_token
         fi
     done
 
