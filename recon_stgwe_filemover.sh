@@ -432,7 +432,6 @@ if [[ "$confirm" =~ ^[Yy]$ ]]; then
     log_message "Removing DB_input_creds.txt & GitHub_input_creds.txt..."
     rm -f DB_input_creds.txt
     rm -f GitHub_input_creds.txt
-    check_command_status "DB_input_creds.txt & GitHub_input_creds.txt removal"
 else
     log_message "DB_input_creds.txt & GitHub_input_creds.txt have not been removed."
 fi
