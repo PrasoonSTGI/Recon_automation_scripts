@@ -98,6 +98,7 @@ validate_db_credentials() {
     local username=$1
     local password=$2
     local dbname=$3
+    sed -i "s/^PGPASSWORD=[^ ]*/PGPASSWORD=$password/" .env-pdi
     # Check DB credentials using PostgreSQL client
     docker run --rm --network host -v /home/$USER:/home/$USER --env-file /home/$USER/.env-pdi postgres psql --port 15432 --host localhost --username "$username" --dbname "$dbname" -c "\q"
     return $?
