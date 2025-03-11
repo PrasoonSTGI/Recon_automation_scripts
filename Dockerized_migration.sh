@@ -8,7 +8,8 @@ DB_PORT_1=15432
 db_username=""
 db_name=""
 db_password=""
-BACKUP_DIR="/home/stgwe"
+HOME_DIR="/home/stgwe"
+#take "/home/stgwe/db_backups" as variable
 
 exit_on_error() {
     log_message "$1"
@@ -98,37 +99,40 @@ echo -e "\e[34m#################################################################
 sleep_after_command
 
 
-if [ ! -d "$BACKUP_DIR/db_backups" ]; then
-    echo "Creating backup directory: $BACKUP_DIR/db_backups"
-    mkdir -p "$BACKUP_DIR/db_backups"
+if [ ! -d "$HOME_DIR/db_backups" ]; then
+    echo "Creating backup directory: $HOME_DIR/db_backups"
+    mkdir -p "$HOME_DIR/db_backups"
     check_command_status " db_backups directory creation."
 fi
 echo -e "\e[34m################################################################################################################################################### \e[0m"
 prompt_user "Do you want to continue to create the table_backups folder under /home/stgwe/db_backups?"
 
-if [ ! -d "$BACKUP_DIR/db_backups/table_backups" ]; then
-    echo "Creating table backups directory: $BACKUP_DIR/db_backups/table_backups"
-    mkdir -p "$BACKUP_DIR/db_backups/table_backups"
+if [ ! -d "$HOME_DIR/db_backups/table_backups" ]; then
+    echo "Creating table backups directory: $HOME_DIR/db_backups/table_backups"
+    mkdir -p "$HOME_DIR/db_backups/table_backups"
     check_command_status "table_backups directory creation."
 fi
 echo -e "\e[34m################################################################################################################################################### \e[0m"
-echo -e "\e[33mTaking full database dump...\e[0m" 
-docker run --rm --network host -v $BACKUP_DIR:$BACKUP_DIR --env-file $BACKUP_DIR/.env-pdi postgres pg_dump -d $db_name -h localhost -p $DB_PORT_1 -U $db_username -w -Fc > $BACKUP_DIR/db_backups/db_backup_$(date "+%Y%m%d").dump
+echo -e "\e[33mTaking full database dump(to be on a safe side)...\e[0m" 
+#user the date as variable $(date "+%Y%m%d")
+# add new prod db_backup as name initials
+docker run --rm --network host -v $HOME_DIR:$HOME_DIR --env-file $HOME_DIR/.env-pdi postgres pg_dump -d $db_name -h localhost -p $DB_PORT_1 -U $db_username -w -Fc > $HOME_DIR/db_backups/db_backup_$(date "+%Y%m%d").dump #use time stamp also
 check_command_status "Taking full database dump"
 
 echo -e "\e[34m################################################################################################################################################### \e[0m"
-prompt_user "Do you want to continue to take table dump?"
-
+prompt_user "Do you want to continue to take fm_action table dump?"
+#add the note saying it will be imported post the full db import from the db backup dump taken from current prod (yellow color)
 echo -e "\e[33mTaking table specific dump for fm_action...\e[0m" 
-docker run --rm --network host -v $BACKUP_DIR:$BACKUP_DIR --env-file $BACKUP_DIR/.env-pdi postgres pg_dump -d $db_name -t fm_action -h localhost -p $DB_PORT_1 -U $db_username -w -Fc > $BACKUP_DIR/db_backups/table_backups/fm_action_backup_$(date "+%Y%m%d").dump
+docker run --rm --network host -v $HOME_DIR:$HOME_DIR --env-file $HOME_DIR/.env-pdi postgres pg_dump -d $db_name -t fm_action -h localhost -p $DB_PORT_1 -U $db_username -w -Fc > $HOME_DIR/db_backups/table_backups/fm_action_backup_$(date "+%Y%m%d").dump ## use timestamp
 check_command_status "Taking fm_action table dump"
 
 echo -e "\e[34m################################################################################################################################################### \e[0m"
 sleep_after_command
 # Step 4: Bring down the "filemover-db" container
 echo -e "\e[33mStopping and removing the 'filemover-db' container...\e[0m" 
-docker stop filemover-db || exit_on_error "Failed to stop 'filemover-db' container."
-docker rm filemover-db || exit_on_error "Failed to remove 'filemover-db' container."
+docker stop filemover-db || exit_on_error "Failed to stop 'filemover-db' container.Exiting...."
+docker rm filemover-db || exit_on_error "Failed to remove 'filemover-db' container.Exiting...."
+# if fails put a check that check the container present or not check the credentials like that 
 echo -e "\e[34m################################################################################################################################################### \e[0m"
 sleep_after_command   
 
@@ -140,48 +144,53 @@ echo -e "\e[34m#################################################################
 sleep_after_command
 
 # Step 6: Import the database from the backup
+## prompt user do they want to import db from current prod db dump 
 echo -e "\e[33mRestoring database from backup(CurrProd_DB_Backup dump)...\e[0m" 
-docker run -i --rm --network host -v $BACKUP_DIR:$BACKUP_DIR --env-file $BACKUP_DIR/.env-pdi postgres pg_restore -d $db_name -h localhost -p $DB_PORT_1 -U $db_username -w < $(ls -td $BACKUP_DIR/db_backups/CurrProd_DB_Backup_*.dump | head -n 1)
+docker run -i --rm --network host -v $HOME_DIR:$HOME_DIR --env-file $HOME_DIR/.env-pdi postgres pg_restore -d $db_name -h localhost -p $DB_PORT_1 -U $db_username -w < $(ls -td $HOME_DIR/db_backups/CurrProd_DB_Backup_*.dump | head -n 1)
 check_command_status "Restoring the database from the backup"
 echo -e "\e[34m################################################################################################################################################### \e[0m"
 
 prompt_user "Do you want to continue to delete all rows from fm_action table?"
 echo -e "\e[33mDeleting all rows from fm_action table...\e[0m" 
-docker run -it --rm --network host -v $BACKUP_DIR:$BACKUP_DIR --env-file $BACKUP_DIR/.env-pdi postgres psql --port $DB_PORT_1 --host localhost --username $db_username --dbname $db_name -c "DELETE FROM fm_action;"
+docker run -it --rm --network host -v $HOME_DIR:$HOME_DIR --env-file $HOME_DIR/.env-pdi postgres psql --port $DB_PORT_1 --host localhost --username $db_username --dbname $db_name -c "DELETE FROM fm_action;"
 check_command_status "Deleting rows from fm_action table"
 echo -e "\e[34m################################################################################################################################################### \e[0m"
 
 prompt_user "Do you want to continue to run additional alter table commands?"
 # Step 8: Run table alteration commands to upgrade the tables
+
+# a alter_sql file which opens a db connection and runs all commands in one go using one sql
+#take reference from for loop we used earlier to execute sql commands 
+#check these sqls also in repo and pull from there to execute it
 echo "Running table alterations..."
-docker run -it --rm --network host -v $BACKUP_DIR:$BACKUP_DIR --env-file $BACKUP_DIR/.env-pdi postgres psql --port $DB_PORT_1 --host localhost --username $db_username --dbname $db_name -c "ALTER TABLE fm_job ADD COLUMN parent_schema text;"
-docker run -it --rm --network host -v $BACKUP_DIR:$BACKUP_DIR --env-file $BACKUP_DIR/.env-pdi postgres psql --port $DB_PORT_1 --host localhost --username $db_username --dbname $db_name -c "ALTER TABLE fm_job_event ADD COLUMN build_info text;"
-docker run -it --rm --network host -v $BACKUP_DIR:$BACKUP_DIR --env-file $BACKUP_DIR/.env-pdi postgres psql --port $DB_PORT_1 --host localhost --username $db_username --dbname $db_name -c "ALTER TABLE fm_job_event ADD COLUMN initiator_id text;"
-docker run -it --rm --network host -v $BACKUP_DIR:$BACKUP_DIR --env-file $BACKUP_DIR/.env-pdi postgres psql --port $DB_PORT_1 --host localhost --username $db_username --dbname $db_name -c "ALTER TABLE fm_action ADD COLUMN IF NOT EXISTS is_error_handler boolean NOT NULL DEFAULT FALSE;"
-docker run -it --rm --network host -v $BACKUP_DIR:$BACKUP_DIR --env-file $BACKUP_DIR/.env-pdi postgres psql --port $DB_PORT_1 --host localhost --username $db_username --dbname $db_name -c "ALTER TABLE fm_action ADD COLUMN IF NOT EXISTS precondition_env jsonb;"
-docker run -it --rm --network host -v $BACKUP_DIR:$BACKUP_DIR --env-file $BACKUP_DIR/.env-pdi postgres psql --port $DB_PORT_1 --host localhost --username $db_username --dbname $db_name -c "ALTER TABLE fm_action ADD COLUMN IF NOT EXISTS precondition_override text;"
-docker run -it --rm --network host -v $BACKUP_DIR:$BACKUP_DIR --env-file $BACKUP_DIR/.env-pdi postgres psql --port $DB_PORT_1 --host localhost --username $db_username --dbname $db_name -c "ALTER TABLE fm_job_action_event ADD COLUMN IF NOT EXISTS resolved_action_parms text;"
-docker run -it --rm --network host -v $BACKUP_DIR:$BACKUP_DIR --env-file $BACKUP_DIR/.env-pdi postgres psql --port $DB_PORT_1 --host localhost --username $db_username --dbname $db_name -c "ALTER TABLE fm_job_action_event ADD COLUMN IF NOT EXISTS end_tms timestamp without time zone;"
+docker run -it --rm --network host -v $HOME_DIR:$HOME_DIR --env-file $HOME_DIR/.env-pdi postgres psql --port $DB_PORT_1 --host localhost --username $db_username --dbname $db_name -c "ALTER TABLE fm_job ADD COLUMN parent_schema text;"
+docker run -it --rm --network host -v $HOME_DIR:$HOME_DIR --env-file $HOME_DIR/.env-pdi postgres psql --port $DB_PORT_1 --host localhost --username $db_username --dbname $db_name -c "ALTER TABLE fm_job_event ADD COLUMN build_info text;"
+docker run -it --rm --network host -v $HOME_DIR:$HOME_DIR --env-file $HOME_DIR/.env-pdi postgres psql --port $DB_PORT_1 --host localhost --username $db_username --dbname $db_name -c "ALTER TABLE fm_job_event ADD COLUMN initiator_id text;"
+docker run -it --rm --network host -v $HOME_DIR:$HOME_DIR --env-file $HOME_DIR/.env-pdi postgres psql --port $DB_PORT_1 --host localhost --username $db_username --dbname $db_name -c "ALTER TABLE fm_action ADD COLUMN IF NOT EXISTS is_error_handler boolean NOT NULL DEFAULT FALSE;"
+docker run -it --rm --network host -v $HOME_DIR:$HOME_DIR --env-file $HOME_DIR/.env-pdi postgres psql --port $DB_PORT_1 --host localhost --username $db_username --dbname $db_name -c "ALTER TABLE fm_action ADD COLUMN IF NOT EXISTS precondition_env jsonb;"
+docker run -it --rm --network host -v $HOME_DIR:$HOME_DIR --env-file $HOME_DIR/.env-pdi postgres psql --port $DB_PORT_1 --host localhost --username $db_username --dbname $db_name -c "ALTER TABLE fm_action ADD COLUMN IF NOT EXISTS precondition_override text;"
+docker run -it --rm --network host -v $HOME_DIR:$HOME_DIR --env-file $HOME_DIR/.env-pdi postgres psql --port $DB_PORT_1 --host localhost --username $db_username --dbname $db_name -c "ALTER TABLE fm_job_action_event ADD COLUMN IF NOT EXISTS resolved_action_parms text;"
+docker run -it --rm --network host -v $HOME_DIR:$HOME_DIR --env-file $HOME_DIR/.env-pdi postgres psql --port $DB_PORT_1 --host localhost --username $db_username --dbname $db_name -c "ALTER TABLE fm_job_action_event ADD COLUMN IF NOT EXISTS end_tms timestamp without time zone;"
 check_command_status "Execution of alter table commands"
 echo -e "\e[34m################################################################################################################################################### \e[0m"
 sleep_after_command
 
 # Step 9: Import the fm_action table from the backup dump
 echo -e "\e[33mImporting 'fm_action' table from table backup dump...\e[0m" 
-docker run -i --rm --network host -v $BACKUP_DIR:$BACKUP_DIR --env-file $BACKUP_DIR/.env-pdi postgres pg_restore --data-only -d $db_name -t fm_action -h localhost -p $DB_PORT_1 -U $db_username -w < $(ls -td $BACKUP_DIR/db_backups/table_backups/fm_action_backup_*.dump | head -n 1)
+docker run -i --rm --network host -v $HOME_DIR:$HOME_DIR --env-file $HOME_DIR/.env-pdi postgres pg_restore --data-only -d $db_name -t fm_action -h localhost -p $DB_PORT_1 -U $db_username -w < $(ls -td $HOME_DIR/db_backups/table_backups/fm_action_backup_*.dump | head -n 1)
 check_command_status "Restoring fm_action table from table backup dump"
 echo -e "\e[34m################################################################################################################################################### \e[0m"
 sleep_after_command
 
 echo "Creating absent table 'fm_env_parms'..."
-docker run --rm --network host -v $BACKUP_DIR:$BACKUP_DIR --env-file $BACKUP_DIR/.env-pdi postgres psql -d $db_name -h localhost -p $DB_PORT_1 -U $db_username -w -f $BACKUP_DIR/recon-stgwe-documentation/db-init/15-FM-CORE-DDL/105-fm_env_parms.sql
+docker run --rm --network host -v $HOME_DIR:$HOME_DIR --env-file $HOME_DIR/.env-pdi postgres psql -d $db_name -h localhost -p $DB_PORT_1 -U $db_username -w -f $HOME_DIR/recon-stgwe-documentation/db-init/15-FM-CORE-DDL/105-fm_env_parms.sql
 check_command_status "fm_env_parms table creation"
 echo -e "\e[34m################################################################################################################################################### \e[0m"
 sleep_after_command
 
-prompt_user "Do you want to run filemover HELLO_WORLD job?"
-docker run --rm --network host -v $BACKUP_DIR/etl:$BACKUP_DIR/etl --env-file $BACKUP_DIR/.env-pdi filemover:latest HELLO_WORLD
-check_command_status "Job execution"
+prompt_user "Do you want to run filemover HELLO_WORLD test?"
+docker run --rm --network host -v $HOME_DIR/etl:$HOME_DIR/etl --env-file $HOME_DIR/.env-pdi filemover:latest HELLO_WORLD
+check_command_status "HELLO_WORLD test"
 echo -e "\e[34m################################################################################################################################################### \e[0m"
 echo -e "\e[32mNew production DB setup completed successfully!!! \e[0m"
 
