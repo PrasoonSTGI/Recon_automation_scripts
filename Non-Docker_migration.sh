@@ -1,10 +1,11 @@
+#put a pre test in the start explaing what ius script about and also menmtion its should run on current non docker platform
 #!/bin/bash
 
 db_username=""
 db_name=""
 db_password="" 
 db_host="localhost"
-db_port="5432"
+db_port="5432" 
 # Function to print an error message and exit
 handle_error() {
     echo "$1"
@@ -22,14 +23,14 @@ sleep_after_command() {
 }
 
 # Function to check the status of a command
-check_command_status() {
-    if [ $? -ne 0 ]; then
-        log_message "$1 failed. Exiting script."
-        exit 1
-    else
-        log_message "$1 succeeded."
-    fi
-}
+# check_command_status() {
+#     if [ $? -ne 0 ]; then
+#         log_message "$1 failed. Exiting script."
+#         exit 1
+#     else
+#         log_message "$1 succeeded."
+#     fi
+# }
 
 # Function to validate DB credentials
 validate_db_credentials() {
@@ -101,7 +102,7 @@ perform_db_backup() {
     fi
 
     # Construct the dump file name with the current date
-    local date=$(date "+%Y%m%d") 
+    local date=$(date "+%Y%m%d") #add time stamp also
     local dump_file="/home/$user_dir/archive/DB_Backup/CurrProd_DB_Backup_$date.dump"
 
     # Run the pg_dump command to create the backup
@@ -116,13 +117,14 @@ perform_db_backup() {
     fi
 }
 
+
 echo -e "\e[34m################################################################################################################################################### \e[0m"
 echo -e "\e[33mSCRIPT STARTED.... \e[0m" 
 echo -e "\e[34m################################################################################################################################################### \e[0m"
 
 # Authenticate DB credentials before proceeding
-authenticate_db
-echo -e "\e[34m################################################################################################################################################### \e[0m"
+authenticate_db### not required
+#echo -e "\e[34m################################################################################################################################################### \e[0m"
 # Perform database backup
 perform_db_backup
 echo -e "\e[34m################################################################################################################################################### \e[0m"
