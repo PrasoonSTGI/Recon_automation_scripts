@@ -1,3 +1,4 @@
+#GIVE AN INTRO ABOUT SCRIPT
 #!/bin/bash
 
 
