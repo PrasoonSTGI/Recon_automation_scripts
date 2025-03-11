@@ -129,4 +129,4 @@ authenticate_db### not required
 perform_db_backup
 echo -e "\e[34m################################################################################################################################################### \e[0m"
 echo -e "\e[32mScript completed successfully!!! \e[0m"
-
+#give an echo statement guiding user that dump is created ftp it to new prod something like that 
