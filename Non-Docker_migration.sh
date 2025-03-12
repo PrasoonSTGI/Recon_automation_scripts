@@ -1,18 +1,11 @@
-#!/bin/bash
-
-# This script performs the following operations:
-# 1. Prompts the user to enter database credentials (username, name, and password).
-# 2. Creates a backup of the specified PostgreSQL database using pg_dump.
-# 3. Saves the backup to a specified directory on the local system.
-# 4. Guides the user to transfer the generated dump file to the new production server (Docker platform).
-# 5. Informs the user to fetch and execute the Dockerized migration script to complete the database migration from the non-Docker to the Docker platform.
-# 
 # The script is intended to run on a non-Docker platform, ensuring the PostgreSQL database is backed up locally before the migration.
 # 
 # Make sure to have access to the PostgreSQL database and required user permissions for pg_dump.
 # This script assumes that the PostgreSQL service is running on localhost with the default port 5432.
 #
 # This script should be executed on a non-Docker platform.
+
+#!/bin/bash
 
 db_username=""
 db_name=""
