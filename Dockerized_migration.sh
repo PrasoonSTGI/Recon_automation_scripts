@@ -1,4 +1,9 @@
-#GIVE AN INTRO ABOUT SCRIPT
+
+# This script automates the migration of the PostgreSQL database.
+# It performs a full database dump, backs up the 'fm_action' table, stops and removes the current "filemover-db" container,
+# creates a new container, restores the database from the backup, and makes alterations to certain tables.
+# It will guide the user through each step of the migration and provide confirmation prompts to continue.
+# The script assumes PostgreSQL is running in a Docker container and the necessary files are in place.
 #!/bin/bash
 
 
@@ -10,7 +15,7 @@ db_username=""
 db_name=""
 db_password=""
 HOME_DIR="/home/stgwe"
-#take "/home/stgwe/db_backups" as variable
+
 
 exit_on_error() {
     log_message "$1"
@@ -115,14 +120,13 @@ if [ ! -d "$HOME_DIR/db_backups/table_backups" ]; then
 fi
 echo -e "\e[34m################################################################################################################################################### \e[0m"
 echo -e "\e[33mTaking full database dump(to be on a safe side)...\e[0m" 
-#user the date as variable $(date "+%Y%m%d")
-# add new prod db_backup as name initials
-docker run --rm --network host -v $HOME_DIR:$HOME_DIR --env-file $HOME_DIR/.env-pdi postgres pg_dump -d $db_name -h localhost -p $DB_PORT_1 -U $db_username -w -Fc > $HOME_DIR/db_backups/db_backup_$(date "+%Y%m%d").dump #use time stamp also
+->>user the date as variable $(date "+%Y%m%d") and use time stamp like $(date '+%Y-%m-%d %H:%M:%S')
+docker run --rm --network host -v $HOME_DIR:$HOME_DIR --env-file $HOME_DIR/.env-pdi postgres pg_dump -d $db_name -h localhost -p $DB_PORT_1 -U $db_username -w -Fc > $HOME_DIR/db_backups/NewProd_db_backup_$(date "+%Y%m%d").dump #use time stamp also
 check_command_status "Taking full database dump"
 
 echo -e "\e[34m################################################################################################################################################### \e[0m"
 prompt_user "Do you want to continue to take fm_action table dump?"
-#add the note saying it will be imported post the full db import from the db backup dump taken from current prod (yellow color)
+->>add the note saying it will be imported post the full db import from the db backup dump taken from current prod (yellow color)
 echo -e "\e[33mTaking table specific dump for fm_action...\e[0m" 
 docker run --rm --network host -v $HOME_DIR:$HOME_DIR --env-file $HOME_DIR/.env-pdi postgres pg_dump -d $db_name -t fm_action -h localhost -p $DB_PORT_1 -U $db_username -w -Fc > $HOME_DIR/db_backups/table_backups/fm_action_backup_$(date "+%Y%m%d").dump ## use timestamp
 check_command_status "Taking fm_action table dump"
@@ -133,7 +137,6 @@ sleep_after_command
 echo -e "\e[33mStopping and removing the 'filemover-db' container...\e[0m" 
 docker stop filemover-db || exit_on_error "Failed to stop 'filemover-db' container.Exiting...."
 docker rm filemover-db || exit_on_error "Failed to remove 'filemover-db' container.Exiting...."
-# if fails put a check that check the container present or not check the credentials like that 
 echo -e "\e[34m################################################################################################################################################### \e[0m"
 sleep_after_command   
 
@@ -145,7 +148,7 @@ echo -e "\e[34m#################################################################
 sleep_after_command
 
 # Step 6: Import the database from the backup
-## prompt user do they want to import db from current prod db dump 
+-->> prompt user do they want to import db from current prod db dump 
 echo -e "\e[33mRestoring database from backup(CurrProd_DB_Backup dump)...\e[0m" 
 docker run -i --rm --network host -v $HOME_DIR:$HOME_DIR --env-file $HOME_DIR/.env-pdi postgres pg_restore -d $db_name -h localhost -p $DB_PORT_1 -U $db_username -w < $(ls -td $HOME_DIR/db_backups/CurrProd_DB_Backup_*.dump | head -n 1)
 check_command_status "Restoring the database from the backup"
@@ -160,9 +163,6 @@ echo -e "\e[34m#################################################################
 prompt_user "Do you want to continue to run additional alter table commands?"
 # Step 8: Run table alteration commands to upgrade the tables
 
-# a alter_sql file which opens a db connection and runs all commands in one go using one sql
-#take reference from for loop we used earlier to execute sql commands 
-#check these sqls also in repo and pull from there to execute it
 echo "Running table alterations..."
 docker run -it --rm --network host -v $HOME_DIR:$HOME_DIR --env-file $HOME_DIR/.env-pdi postgres psql --port $DB_PORT_1 --host localhost --username $db_username --dbname $db_name -c "ALTER TABLE fm_job ADD COLUMN parent_schema text;"
 docker run -it --rm --network host -v $HOME_DIR:$HOME_DIR --env-file $HOME_DIR/.env-pdi postgres psql --port $DB_PORT_1 --host localhost --username $db_username --dbname $db_name -c "ALTER TABLE fm_job_event ADD COLUMN build_info text;"
