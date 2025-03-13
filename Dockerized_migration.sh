@@ -120,15 +120,14 @@ if [ ! -d "$HOME_DIR/db_backups/table_backups" ]; then
 fi
 echo -e "\e[34m################################################################################################################################################### \e[0m"
 echo -e "\e[33mTaking full database dump(to be on a safe side)...\e[0m" 
-->>user the date as variable $(date "+%Y%m%d") and use time stamp like $(date '+%Y-%m-%d %H:%M:%S')
-docker run --rm --network host -v $HOME_DIR:$HOME_DIR --env-file $HOME_DIR/.env-pdi postgres pg_dump -d $db_name -h localhost -p $DB_PORT_1 -U $db_username -w -Fc > $HOME_DIR/db_backups/NewProd_db_backup_$(date "+%Y%m%d").dump #use time stamp also
+docker run --rm --network host -v $HOME_DIR:$HOME_DIR --env-file $HOME_DIR/.env-pdi postgres pg_dump -d $db_name -h localhost -p $DB_PORT_1 -U $db_username -w -Fc > $HOME_DIR/db_backups/NewProd_db_backup_$(date '+%Y-%m-%d %H:%M:%S').dump #use time stamp also
 check_command_status "Taking full database dump"
 
 echo -e "\e[34m################################################################################################################################################### \e[0m"
 prompt_user "Do you want to continue to take fm_action table dump?"
-->>add the note saying it will be imported post the full db import from the db backup dump taken from current prod (yellow color)
+echo -e "\e[33mNOTE : The fm_action table dump will be imported post the full db import from the db backup dump taken from current prod(Non Docker platform)...\e[0m" 
 echo -e "\e[33mTaking table specific dump for fm_action...\e[0m" 
-docker run --rm --network host -v $HOME_DIR:$HOME_DIR --env-file $HOME_DIR/.env-pdi postgres pg_dump -d $db_name -t fm_action -h localhost -p $DB_PORT_1 -U $db_username -w -Fc > $HOME_DIR/db_backups/table_backups/fm_action_backup_$(date "+%Y%m%d").dump ## use timestamp
+docker run --rm --network host -v $HOME_DIR:$HOME_DIR --env-file $HOME_DIR/.env-pdi postgres pg_dump -d $db_name -t fm_action -h localhost -p $DB_PORT_1 -U $db_username -w -Fc > $HOME_DIR/db_backups/table_backups/fm_action_backup_$(date '+%Y-%m-%d %H:%M:%S').dump ## use timestamp
 check_command_status "Taking fm_action table dump"
 
 echo -e "\e[34m################################################################################################################################################### \e[0m"
@@ -145,10 +144,10 @@ echo -e "\e[33mStarting fresh filemover-db container...\e[0m"
 docker run --name filemover-db -e POSTGRES_DB=$db_name -e POSTGRES_USER=$db_username -e POSTGRES_PASSWORD=$db_password -p $DB_PORT_MAPPING -d postgres
 check_command_status "Starting fresh filemover-db container"
 echo -e "\e[34m################################################################################################################################################### \e[0m"
-sleep_after_command
+
 
 # Step 6: Import the database from the backup
--->> prompt user do they want to import db from current prod db dump 
+prompt_user "Do you want to import db from current prod db dump?"
 echo -e "\e[33mRestoring database from backup(CurrProd_DB_Backup dump)...\e[0m" 
 docker run -i --rm --network host -v $HOME_DIR:$HOME_DIR --env-file $HOME_DIR/.env-pdi postgres pg_restore -d $db_name -h localhost -p $DB_PORT_1 -U $db_username -w < $(ls -td $HOME_DIR/db_backups/CurrProd_DB_Backup_*.dump | head -n 1)
 check_command_status "Restoring the database from the backup"
