@@ -17,6 +17,15 @@ db_password=""
 HOME_DIR="/home/stgwe"
 
 
+log_message() {
+    echo "[$(date '+%Y-%m-%d %H:%M:%S')] $1"
+}
+
+# Function to sleep for a few seconds (to allow time for processes to settle)
+sleep_after_command() {
+    sleep 4  # Sleep for 4 seconds (you can adjust the duration)
+}
+
 exit_on_error() {
     log_message "$1"
     exit 1
