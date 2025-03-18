@@ -164,6 +164,12 @@ echo -e "\e[34m#################################################################
 
 prompt_user "Do you want to continue to delete all rows from fm_action table?"
 echo -e "\e[33mDeleting all rows from fm_action table...\e[0m" 
+docker run -it --rm --network host -v $HOME_DIR:$HOME_DIR --env-file $HOME_DIR/.env-pdi postgres psql --port $DB_PORT_1 --host localhost --username $db_username --dbname $db_name -c "DELETE FROM fm_job_action_event
+WHERE fm_action_id = 1;"
+docker run -it --rm --network host -v $HOME_DIR:$HOME_DIR --env-file $HOME_DIR/.env-pdi postgres psql --port $DB_PORT_1 --host localhost --username $db_username --dbname $db_name -c "DELETE FROM fm_job_action_event
+WHERE fm_action_id = 2;"
+docker run -it --rm --network host -v $HOME_DIR:$HOME_DIR --env-file $HOME_DIR/.env-pdi postgres psql --port $DB_PORT_1 --host localhost --username $db_username --dbname $db_name -c "DELETE FROM fm_job_action_event
+WHERE fm_action_id = 3;"
 docker run -it --rm --network host -v $HOME_DIR:$HOME_DIR --env-file $HOME_DIR/.env-pdi postgres psql --port $DB_PORT_1 --host localhost --username $db_username --dbname $db_name -c "DELETE FROM fm_action;"
 check_command_status "Deleting rows from fm_action table"
 echo -e "\e[34m################################################################################################################################################### \e[0m"
