@@ -60,14 +60,8 @@ perform_db_backup() {
     fi
 
     # Define the backup directory path
-    local backup_dir="/home/$user_dir/archive/DB_Backup"
+    local backup_dir="/home/$user_dir/archive/DB_Backups"
     
-    # Check if the backup directory exists; if not, create it
-    if [ ! -d "$backup_dir" ]; then
-        echo "Backup directory does not exist. Creating directory structure..."
-        mkdir -p "$backup_dir" || handle_error "Error: Failed to create backup directory structure."
-        echo "Backup directory created successfully: $backup_dir"
-    fi
 
     # Construct the dump file name with the current date
     local date=$(date '+%Y-%m-%d_%H-%M-%S')  # Avoid spaces in filename
