@@ -59,9 +59,19 @@ perform_db_backup() {
         handle_error "Error: The specified directory /home/$user_dir does not exist."
     fi
 
+    # Define the backup directory path
+    local backup_dir="/home/$user_dir/archive/DB_Backup"
+    
+    # Check if the backup directory exists; if not, create it
+    if [ ! -d "$backup_dir" ]; then
+        echo "Backup directory does not exist. Creating directory structure..."
+        mkdir -p "$backup_dir" || handle_error "Error: Failed to create backup directory structure."
+        echo "Backup directory created successfully: $backup_dir"
+    fi
+
     # Construct the dump file name with the current date
-    local date=$(date '+%Y-%m-%d %H:%M:%S')
-    local dump_file="/home/$user_dir/archive/DB_Backup/CurrProd_DB_Backup_$date.dump"
+    local date=$(date '+%Y-%m-%d_%H-%M-%S')  # Avoid spaces in filename
+    local dump_file="$backup_dir/CurrProd_DB_Backup_$date.dump"
 
     # Run the pg_dump command to create the backup
     echo "Creating database backup..."
