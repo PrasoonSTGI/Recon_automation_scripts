@@ -394,12 +394,11 @@ sleep_after_command
 
 # Step 13: Remove empty backups
 log_message "Removing empty backups..."
-empty_backups=$(find /home/$USER/db_backups/ -size 0 -print0)
-if [ -z "$empty_backups" ]; then
-    log_message "No empty backups found. Moving forward."
-else
-    echo "$empty_backups" | xargs -0 rm
+if find /home/$USER/db_backups/ -size 0 -print0 | grep -q .; then
+    find /home/$USER/db_backups/ -size 0 -print0 | xargs -0 rm
     check_command_status "Removing empty backups"
+else
+    log_message "No empty backups found. Moving forward."
 fi
 sleep_after_command
 
